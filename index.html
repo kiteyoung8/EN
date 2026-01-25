@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <base target="_top">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>GemArticle - AI Tutor</title>
@@ -30,25 +29,11 @@
     .tab-inactive { color: #6b7280; }
     
     /* 動畫 */
-    .listening-pulse {
-      box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
-      animation: pulse-red 1.5s infinite;
-    }
-    .playing-pulse {
-      box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
-      animation: pulse-blue 1.5s infinite;
-    }
+    .listening-pulse { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7); animation: pulse-red 1.5s infinite; }
+    .playing-pulse { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); animation: pulse-blue 1.5s infinite; }
     
-    @keyframes pulse-red {
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(225, 29, 72, 0); }
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
-    }
-    @keyframes pulse-blue {
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
-    }
+    @keyframes pulse-red { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(225, 29, 72, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); } }
+    @keyframes pulse-blue { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); } }
   </style>
 </head>
 <body class="bg-gray-100 h-screen flex flex-col items-center justify-center font-sans">
@@ -75,7 +60,7 @@
       <div id="form-topic" class="block">
         <div class="text-center mb-4">
           <h1 class="text-2xl font-bold text-gray-800 font-chn">英語學習助理</h1>
-          <p class="text-gray-500 text-sm">輸入主題，AI 為您量身打造。</p>
+          <p class="text-gray-500 text-sm">輸入主題，即刻生成教材。</p>
         </div>
         
         <input type="text" id="input-topic" class="w-full mb-4 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="例如: Nvidia, Coffee, Travel...">
@@ -157,8 +142,8 @@
     <div class="relative w-full h-[70vh] perspective-1000 group cursor-pointer" onclick="flipCard(this)">
       <div class="content-box relative w-full h-full transition-all duration-500 transform-style-3d shadow-2xl rounded-3xl">
         
-        <div class="absolute w-full h-full bg-white rounded-3xl p-6 flex flex-col backface-hidden border border-gray-100">
-          <div class="flex-grow overflow-y-auto custom-scroll flex flex-col justify-start pt-4">
+        <div class="absolute w-full h-full bg-white rounded-3xl p-6 flex flex-col backface-hidden border border-gray-100 justify-start pt-8">
+          <div class="flex-grow overflow-y-auto custom-scroll flex flex-col">
             <span class="text-xs font-bold text-gray-300 uppercase mb-2 tracking-widest">English</span>
             <h2 id="card-eng" class="text-2xl md:text-3xl leading-relaxed text-gray-800 font-eng text-left pb-4">...</h2>
             <div id="card-tips" class="mt-2 text-sm text-indigo-500 font-mono bg-indigo-50 p-3 rounded-lg hidden"></div>
@@ -167,7 +152,7 @@
         </div>
 
         <div class="absolute w-full h-full bg-slate-800 rounded-3xl p-6 flex flex-col justify-between backface-hidden rotate-y-180 text-white">
-          <div class="flex-grow flex flex-col justify-start overflow-y-auto custom-scroll pt-2">
+          <div class="flex-grow flex flex-col justify-start overflow-y-auto custom-scroll pt-4">
             <h3 class="text-xs font-bold text-slate-400 uppercase mb-2">Translation</h3>
             <p id="card-chn" class="text-xl leading-relaxed font-chn text-slate-100 mb-6">...</p>
             
@@ -241,24 +226,39 @@
   </div>
 
   <script>
+    // ==========================================
+    // ⚠️ 已經填入您的正確網址
+    // ==========================================
+    const API_URL = "https://script.google.com/macros/s/AKfycbyiNl4M6V-t2E55pM9EZ4efcSxHbhidAIkHsZj1jYJX6eHUPSEbhCyD1RB_K0o70diIOw/exec"; 
+
+    // === Vercel API Bridge ===
+    async function callApi(action, params = {}) {
+      const payload = { action: action, ...params };
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify(payload),
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+        });
+        const json = await response.json();
+        if (json.status === 'error') throw new Error(json.message);
+        return json;
+      } catch (e) {
+        console.error("API Error:", e);
+        alert("連線錯誤: " + e.message);
+        throw e;
+      }
+    }
+
     // === Variables ===
-    let currentCards = [];
-    let currentIndex = 0;
-    let recognition;
-    let isRecording = false;
-    let finalTranscript = '';
-    let silenceTimer = null;
+    let currentCards = [], currentIndex = 0, recognition, isRecording = false, finalTranscript = '', silenceTimer = null;
     const SILENCE_DELAY = 2000;
-    let isPlayingFull = false;
-    let voices = [];
+    let isPlayingFull = false, voices = [], selectedVoice = null;
 
     // === USER ID ===
     function getUserId() {
       let uid = localStorage.getItem('gem_reader_uid');
-      if (!uid) {
-        uid = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('gem_reader_uid', uid);
-      }
+      if (!uid) { uid = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); localStorage.setItem('gem_reader_uid', uid); }
       return uid;
     }
 
@@ -327,13 +327,19 @@
     function loadWordBank() {
       const container = document.getElementById('wordbank-list');
       container.innerHTML = '<p class="text-center text-gray-400 mt-10 animate-pulse">Loading words...</p>';
-      google.script.run.withSuccessHandler(renderWordBank).getVocabularyList(getUserId());
+      
+      callApi('getVocab', { userId: getUserId() })
+      .then(renderWordBank)
+      .catch(e => { container.innerHTML = '<p class="text-center text-red-400">Error loading words.</p>'; });
     }
 
     function renderWordBank(words) {
       const container = document.getElementById('wordbank-list');
       if (!words || words.length === 0) { container.innerHTML = '<div class="text-center text-gray-400 mt-10"><p class="text-4xl mb-2">📭</p><p>No words saved yet.</p></div>'; return; }
-      container.innerHTML = words.map(w => {
+      
+      const list = Array.isArray(words) ? words : (words.data || []);
+
+      container.innerHTML = list.map(w => {
         const safeContext = (w.context || "").replace(/'/g, "\\'");
         return `<div class="bg-gray-50 p-4 rounded-xl border border-gray-100 relative group hover:shadow-md transition">
           <div class="flex justify-between items-start"><div class="flex-grow"><div class="flex items-center gap-2 mb-1 cursor-pointer" onclick="speakSimpleWord('${w.word}')"><span class="text-indigo-500 text-lg hover:scale-110 transition">🔊</span><h3 class="text-lg font-bold text-gray-800 font-eng hover:text-indigo-600 transition">${w.word}</h3></div><p class="text-sm text-indigo-400 font-mono mb-1">${w.ipa||''}</p><p class="text-sm text-gray-600 font-chn">${w.def}</p></div><button onclick="deleteWord('${w.id}', this)" class="text-gray-300 hover:text-red-500 p-2 transition">🗑️</button></div>
@@ -344,14 +350,20 @@
     function deleteWord(id, btnEl) {
       if(!confirm("Delete this word?")) return;
       const cardEl = btnEl.closest('div.bg-gray-50'); cardEl.style.opacity = '0.5';
-      google.script.run.withSuccessHandler(() => { cardEl.remove(); if(document.getElementById('wordbank-list').children.length === 0) renderWordBank([]); }).deleteVocabulary(getUserId(), id);
+      
+      callApi('delVocab', { userId: getUserId(), id: id })
+      .then(() => {
+        cardEl.remove();
+        if(document.getElementById('wordbank-list').children.length === 0) renderWordBank([]); 
+      });
     }
 
     function saveWord(word, ipa, def, btn) {
       const context = currentCards[currentIndex].english;
       const contextChn = currentCards[currentIndex].chinese;
       btn.innerText = "✓ Saved"; btn.classList.replace('bg-indigo-600', 'bg-green-500'); btn.disabled = true;
-      google.script.run.saveVocabulary(getUserId(), word, ipa, def, context, contextChn);
+      
+      callApi('saveVocab', { userId: getUserId(), word: word, ipa: ipa, def: def, ctx: context, ctxChn: contextChn });
     }
     
     // TTS
@@ -370,11 +382,20 @@
     
     function submitTopic() { 
         const topic=document.getElementById('input-topic').value; if(!topic)return alert("Please enter a topic!"); setLoading(true); 
-        google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFailure).handleTopicGeneration(topic, document.getElementById('input-level').value, document.getElementById('input-len-topic').value, document.getElementById('input-scenario').value); 
+        callApi('generate', { 
+            topic: topic, 
+            level: document.getElementById('input-level').value, 
+            len: document.getElementById('input-len-topic').value, 
+            scenario: document.getElementById('input-scenario').value 
+        }).then(onSuccess).catch(onFailure);
     }
     function submitPaste() { 
         const txt=document.getElementById('input-content').value; if(!txt)return alert("Please paste content!"); setLoading(true); 
-        google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFailure).handleFrontendImport(document.getElementById('input-title').value, txt, document.getElementById('input-len-paste').value); 
+        callApi('import', { 
+            title: document.getElementById('input-title').value, 
+            content: txt, 
+            len: document.getElementById('input-len-paste').value 
+        }).then(onSuccess).catch(onFailure);
     }
     function onSuccess(res) { setLoading(false); currentCards=res.data.cards; currentIndex=0; document.getElementById('card-main-title').innerText=res.data.title||'Lesson'; document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-cards').classList.remove('hidden','flex'); document.getElementById('view-cards').classList.add('flex'); renderCard(); }
     function onFailure(e) { setLoading(false); alert("Error: "+e.message); }
