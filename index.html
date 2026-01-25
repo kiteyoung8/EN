@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GemArticle - Vercel Edition</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+<body class="bg-gray-100 h-screen flex flex-col items-center justify-center font-sans">
+  
+  <script>
+    // ==========================================
+    // ⚠️ 設定區：請填入你的 Google Apps Script 網址
+    // ==========================================
+    const API_URL = "https://script.google.com/macros/s/AKfycbyiNl4M6V-t2E55pM9EZ4efcSxHbhidAIkHsZj1jYJX6eHUPSEbhCyD1RB_K0o70diIOw/exec"; 
+
+    // === 通用 API 呼叫函式 (取代 google.script.run) ===
+    async function callApi(action, params = {}) {
+      // 顯示 Loading (如果有的話)
+      const formData = { action: action, ...params };
+      
+      // 使用 fetch 發送請求
+      // 注意：redirect: "follow" 是必須的，因為 GAS 會轉址
+      const response = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify(formData)
+      });
+      
+      const json = await response.json();
+      if (json.status === 'error') throw new Error(json.message);
+      return json; // 這裡通常是 { status: 'success', data: ... }
+    }
+
+    // === 原本的邏輯修改 ===
+    
+    // 範例：修改 submitTopic
+    function submitTopic() {
+      const topic = document.getElementById('input-topic').value;
+      // ... (取得其他參數)
+      setLoading(true);
+
+      // 舊寫法: google.script.run...
+      // 新寫法:
+      callApi('generate', { 
+        topic: topic, 
+        level: document.getElementById('input-level').value,
+        len: document.getElementById('input-len-topic').value,
+        scenario: document.getElementById('input-scenario').value
+      })
+      .then(onSuccess)
+      .catch(onFailure);
+    }
+
+    // 範例：修改 submitPaste
+    function submitPaste() {
+        // ... (取得參數)
+        setLoading(true);
+        callApi('import', {
+            title: document.getElementById('input-title').value,
+            content: document.getElementById('input-content').value,
+            len: document.getElementById('input-len-paste').value
+        })
+        .then(onSuccess)
+        .catch(onFailure);
+    }
+
+    // 範例：修改 loadWordBank
+    function loadWordBank() {
+        // UI code...
+        callApi('getVocab', { userId: getUserId() })
+        .then(renderWordBank); // 注意這裡直接回傳陣列，可能需要後端配合調整回傳結構
+    }
+
+    // 範例：修改 saveWord
+    function saveWord(w, i, d, btn) {
+        // UI code...
+        callApi('saveVocab', {
+            userId: getUserId(),
+            word: w, ipa: i, def: d,
+            ctx: currentCards[currentIndex].english,
+            ctxChn: currentCards[currentIndex].chinese
+        });
+    }
+
+    // ... (其他 deleteWord 等函式依此類推，全部換成 callApi) ...
+
+    // === 保留原本的其他 UI 邏輯 (Speech, Tabs, etc.) ===
+    // 請將原本 script 中除了 google.script.run 以外的邏輯都貼回來
+  </script>
+</body>
+</html>
