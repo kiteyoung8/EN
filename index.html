@@ -241,7 +241,7 @@
 
   <script>
     // ==========================================
-    // ⚠️ CRITICAL UPDATE: 已經填入您剛剛提供的全新網址 (EA/exec)
+    // ⚠️ CRITICAL UPDATE: 已經填入您剛剛提供的全新網址
     // ==========================================
     const API_URL = "https://script.google.com/macros/s/AKfycbxyt-Mku0_x1WSxm1gsGuIKIQ-5bULwSNi2QmnRPVYFXuGUvEi88b24CJ2qzRtSOghFYQ/exec"; 
 
@@ -259,7 +259,12 @@
         return json;
       } catch (e) {
         console.error("API Error:", e);
-        alert("連線錯誤: " + e.message);
+        // 如果是 Failed to fetch，提示更友善的訊息
+        if (e.message.includes("Failed to fetch")) {
+            alert("連線失敗！\n1. 請檢查網路連線。\n2. 請確認後端是否已部署為 'Anyone' 權限。");
+        } else {
+            alert("API 錯誤: " + e.message);
+        }
         throw e;
       }
     }
