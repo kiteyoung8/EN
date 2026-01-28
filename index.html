@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <base target="_top">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>GemArticle - AI Tutor</title>
@@ -240,35 +241,6 @@
   </div>
 
   <script>
-    // ==========================================
-    // ⚠️ CRITICAL UPDATE: 已經填入您剛剛提供的全新網址
-    // ==========================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbxyt-Mku0_x1WSxm1gsGuIKIQ-5bULwSNi2QmnRPVYFXuGUvEi88b24CJ2qzRtSOghFYQ/exec"; 
-
-    // === 通用 API 呼叫函式 (取代 google.script.run) ===
-    async function callApi(action, params = {}) {
-      const payload = { action: action, ...params };
-      try {
-        const response = await fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify(payload),
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-        });
-        const json = await response.json();
-        if (json.status === 'error') throw new Error(json.message);
-        return json;
-      } catch (e) {
-        console.error("API Error:", e);
-        // 如果是 Failed to fetch，提示更友善的訊息
-        if (e.message.includes("Failed to fetch")) {
-            alert("連線失敗！\n1. 請檢查網路連線。\n2. 請確認後端是否已部署為 'Anyone' 權限。");
-        } else {
-            alert("API 錯誤: " + e.message);
-        }
-        throw e;
-      }
-    }
-
     // === Variables ===
     let currentCards = [];
     let currentIndex = 0;
@@ -351,14 +323,11 @@
       }
     }
 
-    // === Word Bank Logic (via API) ===
+    // === Word Bank Logic ===
     function loadWordBank() {
       const container = document.getElementById('wordbank-list');
       container.innerHTML = '<p class="text-center text-gray-400 mt-10 animate-pulse">Loading words...</p>';
-      
-      callApi('getVocab', { userId: getUserId() })
-      .then(renderWordBank)
-      .catch(e => { container.innerHTML = '<p class="text-center text-red-400">Error loading words.</p>'; });
+      google.script.run.withSuccessHandler(renderWordBank).getVocabularyList(getUserId());
     }
 
     function renderWordBank(words) {
@@ -375,18 +344,14 @@
     function deleteWord(id, btnEl) {
       if(!confirm("Delete this word?")) return;
       const cardEl = btnEl.closest('div.bg-gray-50'); cardEl.style.opacity = '0.5';
-      callApi('delVocab', { userId: getUserId(), id: id })
-      .then(() => {
-         cardEl.remove();
-         if(document.getElementById('wordbank-list').children.length === 0) renderWordBank([]);
-      });
+      google.script.run.withSuccessHandler(() => { cardEl.remove(); if(document.getElementById('wordbank-list').children.length === 0) renderWordBank([]); }).deleteVocabulary(getUserId(), id);
     }
 
     function saveWord(word, ipa, def, btn) {
       const context = currentCards[currentIndex].english;
       const contextChn = currentCards[currentIndex].chinese;
       btn.innerText = "✓ Saved"; btn.classList.replace('bg-indigo-600', 'bg-green-500'); btn.disabled = true;
-      callApi('saveVocab', { userId: getUserId(), word: word, ipa: ipa, def: def, ctx: context, ctxChn: contextChn });
+      google.script.run.saveVocabulary(getUserId(), word, ipa, def, context, contextChn);
     }
     
     // TTS
@@ -403,29 +368,14 @@
     }
     function setLoading(isLoading) { document.getElementById('loading-msg').classList.toggle('hidden', !isLoading); }
     
-    // Generate Logic (via API)
     function submitTopic() { 
-        const topic=document.getElementById('input-topic').value; if(!topic)return alert("Please enter a topic!"); setLoading(true);
-        callApi('generate', { 
-            topic: topic, 
-            level: document.getElementById('input-level').value, 
-            len: document.getElementById('input-len-topic').value, 
-            scenario: document.getElementById('input-scenario').value 
-        })
-        .then(onSuccess)
-        .catch(onFailure);
+        const topic=document.getElementById('input-topic').value; if(!topic)return alert("Please enter a topic!"); setLoading(true); 
+        google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFailure).handleTopicGeneration(topic, document.getElementById('input-level').value, document.getElementById('input-len-topic').value, document.getElementById('input-scenario').value); 
     }
     function submitPaste() { 
-        const txt=document.getElementById('input-content').value; if(!txt)return alert("Please paste content!"); setLoading(true);
-        callApi('import', {
-            title: document.getElementById('input-title').value, 
-            content: txt, 
-            len: document.getElementById('input-len-paste').value
-        })
-        .then(onSuccess)
-        .catch(onFailure);
+        const txt=document.getElementById('input-content').value; if(!txt)return alert("Please paste content!"); setLoading(true); 
+        google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFailure).handleFrontendImport(document.getElementById('input-title').value, txt, document.getElementById('input-len-paste').value); 
     }
-    
     function onSuccess(res) { setLoading(false); currentCards=res.data.cards; currentIndex=0; document.getElementById('card-main-title').innerText=res.data.title||'Lesson'; document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-cards').classList.remove('hidden','flex'); document.getElementById('view-cards').classList.add('flex'); renderCard(); }
     function onFailure(e) { setLoading(false); alert("Error: "+e.message); }
 
@@ -434,15 +384,6 @@
       recognition = new webkitSpeechRecognition(); recognition.continuous=true; recognition.interimResults=true; recognition.lang='en-US';
       recognition.onstart = () => { isRecording=true; updateMicBtn(true); finalTranscript=''; document.getElementById('feedback-area').classList.remove('hidden'); document.getElementById('status-text').innerText="Listening..."; };
       recognition.onend = () => { if(isRecording){ isRecording=false; updateMicBtn(false); } };
-      
-      // Error Handling (For HTC/Mobile issues)
-      recognition.onerror = (event) => {
-         isRecording = false; updateMicBtn(false);
-         console.error("Speech Error:", event.error);
-         if(event.error === 'service-not-allowed') alert("Please install 'Speech Services by Google' from Play Store.");
-         else if(event.error === 'not-allowed') alert("Please allow microphone access.");
-      };
-
       recognition.onresult = (e) => { 
           let interim=''; let final=''; for(let i=e.resultIndex; i<e.results.length; ++i) e.results[i].isFinal ? final+=e.results[i][0].transcript : interim+=e.results[i][0].transcript;
           finalTranscript+=final; document.getElementById('status-text').innerText=`"${(finalTranscript+interim).substring(0,40)}..."`;
@@ -451,7 +392,7 @@
     }
     function toggleRecording(e) { e.stopPropagation(); if(isRecording) recognition.stop(); else recognition.start(); }
     function stopRecordingManually() { if(silenceTimer) clearTimeout(silenceTimer); if(recognition) recognition.stop(); isRecording=false; updateMicBtn(false); }
-    function updateMicBtn(active) { const btn=document.getElementById('btn-mic'); btn.innerText=active?'🛑 Recording...':'🎤 Speak'; btn.className=active?'bg-rose-500 text-white py-3 rounded-xl shadow-lg listening-pulse':'flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg border-b-4 border-indigo-700 active:border-b-0 active:translate-y-1 transition-all'; }
+    function updateMicBtn(active) { const btn=document.getElementById('btn-mic'); btn.innerText=active?'🛑 Recording...':'🎤 Speak'; btn.className=active?'bg-rose-500 text-white py-3 rounded-xl shadow-lg listening-pulse':'flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg border-b-4 border-indigo-700 active:border-b-0 active:translate-y-1'; }
     function evaluatePronunciation(spoken, target) {
       const s=spoken.toLowerCase().split(/\s+/), t=target.toLowerCase().split(/\s+/); let hit=0; t.forEach(w=>{if(s.includes(w.replace(/[^\w]/g,'')))hit++});
       let score=Math.min(100, Math.round((hit/t.length)*100)); const badge=document.getElementById('score-badge'); document.getElementById('status-text').innerText=`You said: "${spoken}"`;
