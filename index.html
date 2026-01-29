@@ -15,46 +15,27 @@
     .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #c7c7c7; border-radius: 4px; }
     
-    /* 3D 卡片翻轉 */
     .perspective-1000 { perspective: 1000px; }
     .transform-style-3d { transform-style: preserve-3d; }
     .backface-hidden { backface-visibility: hidden; }
     .rotate-y-180 { transform: rotateY(180deg); }
     .group.flipped .content-box { transform: rotateY(180deg); }
 
-    /* 動畫 */
-    .listening-pulse { animation: pulse-red 1.5s infinite; }
-    @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(225, 29, 72, 0); } 100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); } }
-
-    /* 🔥 互動文字樣式 🔥 */
     .clickable-word {
-        cursor: pointer;
-        padding: 2px 0;
-        border-radius: 4px;
-        transition: background-color 0.2s, color 0.2s;
+        cursor: pointer; padding: 2px 0; border-radius: 4px; transition: background-color 0.2s, color 0.2s;
     }
     .clickable-word:hover {
-        background-color: #e0e7ff; /* Indigo-100 */
-        color: #4338ca; /* Indigo-700 */
-        text-decoration: underline;
+        background-color: #e0e7ff; color: #4338ca; text-decoration: underline;
     }
     
-    /* 🔥 翻譯彈窗樣式 🔥 */
     #word-popup {
-        position: absolute;
-        z-index: 50;
-        background: white;
-        border-radius: 12px;
+        position: absolute; z-index: 50; background: white; border-radius: 12px;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-        border: 1px solid #e5e7eb;
-        padding: 12px;
-        min-width: 200px;
-        max-width: 280px;
-        display: none; /* 預設隱藏 */
+        border: 1px solid #e5e7eb; padding: 12px; min-width: 200px; max-width: 280px; display: none;
         animation: popup-fade 0.2s ease-out;
     }
     @keyframes popup-fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    #word-popup::after { /* 小箭頭 */
+    #word-popup::after {
         content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%) rotate(45deg);
         width: 12px; height: 12px; background: white; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;
     }
@@ -64,9 +45,14 @@
 
   <div id="view-input" class="w-full max-w-lg p-6 transition-all duration-300">
     <div class="bg-white rounded-2xl shadow-xl p-8 relative">
-      <button onclick="openWordBank()" class="absolute top-4 right-4 text-indigo-600 hover:bg-indigo-50 p-2 rounded-full transition" title="My Word Bank">
-        <span class="text-xl">📚</span>
-      </button>
+      <div class="absolute top-4 right-4 flex gap-2">
+        <button onclick="openLibrary()" class="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full transition" title="我的文章庫">
+            <span class="text-xl">📂</span>
+        </button>
+        <button onclick="openWordBank()" class="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full transition" title="我的生字本">
+            <span class="text-xl">📚</span>
+        </button>
+      </div>
 
       <div class="flex justify-center mb-6 border-b border-gray-200">
         <button onclick="switchTab('topic')" id="tab-topic" class="border-b-2 border-indigo-600 text-indigo-600 font-bold px-6 py-2">✨ AI 生成</button>
@@ -149,7 +135,12 @@
     <div class="bg-white rounded-3xl shadow-2xl p-6 h-[85vh] flex flex-col relative border border-gray-100">
       <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
         <h2 class="text-xl font-bold text-gray-800 font-eng">📖 全文閱讀 (Full Article)</h2>
-        <button onclick="goBackToMenu()" class="text-gray-400 font-bold text-sm">✕</button>
+        <div class="flex gap-2">
+            <button id="btn-save-article" onclick="saveCurrentArticle()" class="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded transition font-bold text-sm">
+                💾 儲存 (Save)
+            </button>
+            <button onclick="goBackToMenu()" class="text-gray-400 font-bold text-sm">✕</button>
+        </div>
       </div>
       
       <div class="flex-grow overflow-y-auto custom-scroll relative">
@@ -190,44 +181,46 @@
     </div>
   </div>
 
+  <div id="view-library" class="hidden w-full max-w-lg p-6 h-full flex-col justify-center">
+    <div class="bg-white rounded-3xl shadow-2xl p-6 h-[80vh] flex flex-col border border-gray-100">
+      <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
+        <h2 class="text-xl font-bold text-gray-800 font-chn">📂 我的文章庫</h2>
+        <button onclick="goBackToMenu()" class="text-gray-400 text-sm">✕</button>
+      </div>
+      <div id="library-list" class="flex-grow overflow-y-auto custom-scroll space-y-3"><p class="text-center text-gray-400 mt-10">Loading...</p></div>
+      <button onclick="loadLibrary()" class="mt-4 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">↻ 重新整理 (Refresh)</button>
+    </div>
+  </div>
+
   <script>
-    // 🔥 您的最新後端網址 (已更新)
+    // 🔥 後端 API 網址 (請確認)
     const API_URL = "https://script.google.com/macros/s/AKfycbzTciZ2Z7Xrmc8IrV-VHqmJMT6rdbnnIbnE1j6YYKDv3yC3Av0fvofThL6pBmvj_GP0MQ/exec"; 
 
     let currentCards = [], currentIndex = 0, isPlayingFull = false, recognition, isRecording = false;
-    let voices = [], wordCache = {}; // 單字快取
-    let currentPopupData = null; // 當前彈窗資料
+    let voices = [], wordCache = {}; 
+    let currentPopupData = null;
+    let currentArticleText = ""; // 🔥 用來存當前文章的純文字，方便儲存
 
-    // 🔥 TTS Setup (強制篩選英文聲音，解決數字讀成中文問題)
+    // 🔥 TTS Setup
     function loadVoices() {
       voices = window.speechSynthesis.getVoices();
       const select = document.getElementById('input-voice');
       select.innerHTML = '';
-      
-      // 1. 只篩選英文 (lang 開頭為 'en')
       const engVoices = voices.filter(v => v.lang.startsWith('en'));
       const listToShow = engVoices.length > 0 ? engVoices : voices;
-
       listToShow.forEach((v) => {
           const option = document.createElement('option');
-          option.value = voices.indexOf(v); // 使用原始索引
+          option.value = voices.indexOf(v);
           option.text = `${v.name} (${v.lang})`;
           select.appendChild(option);
       });
-
-      // 自動預選 Google US 或第一個英文
       let defaultIdx = voices.findIndex(v => v.name.includes('Google US English'));
       if (defaultIdx === -1) defaultIdx = voices.findIndex(v => v.lang === 'en-US');
-
-      if (defaultIdx !== -1) {
-          select.value = defaultIdx;
-      } else if (engVoices.length > 0) {
-          select.value = voices.indexOf(engVoices[0]);
-      }
+      if (defaultIdx !== -1) select.value = defaultIdx;
+      else if (engVoices.length > 0) select.value = voices.indexOf(engVoices[0]);
     }
     window.speechSynthesis.onvoiceschanged = loadVoices; loadVoices();
 
-    // 🔥 Speak Function (強制設定 en-US)
     function speak(txt){ 
         window.speechSynthesis.cancel(); 
         const u = new SpeechSynthesisUtterance(txt); 
@@ -250,10 +243,13 @@
     // Navigation
     function goBackToMenu() {
       stopFullAudio();
-      ['view-cards', 'view-review', 'view-wordbank'].forEach(id => document.getElementById(id).classList.remove('flex'));
-      ['view-cards', 'view-review', 'view-wordbank'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      ['view-cards', 'view-review', 'view-wordbank', 'view-library'].forEach(id => {
+          document.getElementById(id).classList.remove('flex');
+          document.getElementById(id).classList.add('hidden');
+      });
       document.getElementById('view-input').classList.remove('hidden');
     }
+    
     function switchTab(mode) {
        document.getElementById('form-topic').classList.toggle('hidden', mode!=='topic');
        document.getElementById('form-paste').classList.toggle('hidden', mode!=='paste');
@@ -261,13 +257,13 @@
        document.getElementById('tab-paste').className = mode==='paste'?'border-b-2 border-indigo-600 text-indigo-600 font-bold px-6 py-2':'text-gray-500 px-6 py-2';
     }
 
-    // Submit & Flow
+    // Generate Flow
     function submitTopic() {
-       const topic=document.getElementById('input-topic').value; if(!topic)return alert("請輸入主題 (Please enter a topic)");
+       const topic=document.getElementById('input-topic').value; if(!topic)return alert("請輸入主題");
        startGen('generate', { topic, level:document.getElementById('input-level').value, len:document.getElementById('input-len-topic').value, scenario:document.getElementById('input-scenario').value });
     }
     function submitPaste() {
-       const txt=document.getElementById('input-content').value; if(!txt)return alert("請貼上文章 (Please paste text)");
+       const txt=document.getElementById('input-content').value; if(!txt)return alert("請貼上文章");
        startGen('import', { title:document.getElementById('input-title').value, content:txt, len:document.getElementById('input-len-paste').value });
     }
     function startGen(act, data) {
@@ -275,6 +271,9 @@
         callApi(act, data).then(res => {
             document.getElementById('loading-msg').classList.add('hidden');
             currentCards = res.data.cards; currentIndex = 0;
+            // 🔥 組裝並保存純文字，供儲存使用
+            currentArticleText = currentCards.map(c => c.english).join(' ');
+            
             document.getElementById('card-main-title').innerText = res.data.title || 'Lesson';
             document.getElementById('view-input').classList.add('hidden');
             document.getElementById('view-cards').classList.remove('hidden');
@@ -283,13 +282,12 @@
         });
     }
 
-    // Card View
+    // Card UI
     function renderCard() {
         const c = currentCards[currentIndex];
         document.getElementById('card-eng').innerText = c.english;
         document.getElementById('card-chn').innerText = c.chinese;
         document.getElementById('counter').innerText = `${currentIndex+1}/${currentCards.length}`;
-        
         const vList = document.getElementById('vocab-list');
         if(c.vocabulary && c.vocabulary.length){
             document.getElementById('vocab-area').classList.remove('hidden');
@@ -298,23 +296,31 @@
         document.querySelector('.group').classList.remove('flipped');
     }
     function flipCard(el){ if(!isRecording) el.classList.toggle('flipped'); }
-    function nextCard(){ if(currentIndex<currentCards.length-1){currentIndex++; renderCard();} else { showReviewPage(); } }
+    function nextCard(){ if(currentIndex<currentCards.length-1){currentIndex++; renderCard();} else { showReviewPage(false); } }
     function prevCard(){ if(currentIndex>0){currentIndex--; renderCard();} }
     function speakTarget(e){ e.stopPropagation(); speak(currentCards[currentIndex].english); }
 
-    // 🔥🔥🔥 全文閱讀與點擊查字邏輯 🔥🔥🔥
-    function showReviewPage() {
+    // 🔥 Review Page & Click to Translate
+    // isFromLibrary: 用來判斷這篇文章是剛生成的(有卡片)，還是從圖書館讀取的(只有純文字)
+    function showReviewPage(isFromLibrary = false) {
         document.getElementById('view-cards').classList.add('hidden');
         document.getElementById('view-cards').classList.remove('flex');
         const view = document.getElementById('view-review');
         view.classList.remove('hidden'); view.classList.add('flex');
         
+        // 如果是圖書館載入的，按鈕狀態要變更
+        const saveBtn = document.getElementById('btn-save-article');
+        if(isFromLibrary) {
+            saveBtn.innerHTML = "📂 已收藏 (Saved)"; saveBtn.disabled = true; saveBtn.classList.add('text-gray-400');
+        } else {
+            saveBtn.innerHTML = "💾 儲存 (Save)"; saveBtn.disabled = false; saveBtn.classList.remove('text-gray-400');
+        }
+
         document.getElementById('review-title').innerText = document.getElementById('card-main-title').innerText;
         const contentDiv = document.getElementById('review-content');
         
-        const fullText = currentCards.map(c => c.english).join(' ');
-        const words = fullText.split(/(\s+)/); 
-        
+        // 斷詞與顯示
+        const words = currentArticleText.split(/(\s+)/); 
         contentDiv.innerHTML = words.map(w => {
             if(w.trim().length === 0) return w; 
             const rawWord = w.replace(/[^\w']/g, ""); 
@@ -323,9 +329,58 @@
         }).join('');
     }
 
+    // 🔥 儲存文章功能
+    function saveCurrentArticle() {
+        const title = document.getElementById('card-main-title').innerText;
+        if(!currentArticleText) return;
+        const btn = document.getElementById('btn-save-article');
+        btn.innerText = "Saving...";
+        callApi('saveArticle', { userId: getUserId(), title: title, content: currentArticleText }).then(() => {
+            btn.innerText = "✓ 已儲存"; btn.disabled = true; btn.classList.add('text-green-600');
+        });
+    }
+
+    // 🔥 文章庫列表
+    function openLibrary() {
+        document.getElementById('view-input').classList.add('hidden');
+        document.getElementById('view-library').classList.remove('hidden');
+        document.getElementById('view-library').classList.add('flex');
+        loadLibrary();
+    }
+    function loadLibrary() {
+        callApi('getArticles', { userId: getUserId() }).then(res => {
+             const list = document.getElementById('library-list');
+             if(!res.data.length) list.innerHTML='<p class="text-center text-gray-400 mt-4">尚無收藏文章。</p>';
+             else list.innerHTML = res.data.map(art => `
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 flex justify-between items-center group cursor-pointer hover:bg-white hover:shadow-md transition" onclick="readArchivedArticle('${art.title}', '${escape(art.content)}')">
+                    <div>
+                        <h3 class="font-bold text-indigo-700 font-eng text-lg">${art.title}</h3>
+                        <p class="text-xs text-gray-400 mt-1">${new Date(art.date).toLocaleDateString()}</p>
+                    </div>
+                    <button onclick="event.stopPropagation(); delArticle('${art.id}', this)" class="text-gray-300 hover:text-red-500 p-2">🗑️</button>
+                </div>`).join('');
+        });
+    }
+    // 從圖書館讀取文章 (只能進全螢幕閱讀模式，無法進卡片模式)
+    function readArchivedArticle(title, contentEscaped) {
+        const content = unescape(contentEscaped);
+        document.getElementById('view-library').classList.add('hidden');
+        document.getElementById('view-library').classList.remove('flex');
+        
+        // 設定資料
+        document.getElementById('card-main-title').innerText = title;
+        currentArticleText = content;
+        
+        // 直接進入閱讀模式
+        showReviewPage(true);
+    }
+    function delArticle(id, btn) {
+        if(confirm("確定刪除此文章?")) callApi('delArticle', { userId: getUserId(), id }).then(()=>btn.closest('div').remove());
+    }
+
+    // Word Click Handler
     async function handleWordClick(word, el) {
         speak(word);
-        
         const popup = document.getElementById('word-popup');
         const rect = el.getBoundingClientRect();
         const parentRect = document.getElementById('view-review').getBoundingClientRect();
@@ -333,8 +388,7 @@
         let top = rect.top - parentRect.top - popup.offsetHeight - 10;
         if(top < 0) top = rect.bottom - parentRect.top + 10;
         
-        popup.style.top = `${top}px`;
-        popup.style.left = `${rect.left - parentRect.left}px`;
+        popup.style.top = `${top}px`; popup.style.left = `${rect.left - parentRect.left}px`;
         popup.style.display = 'block';
         
         document.getElementById('popup-word').innerText = word;
@@ -343,66 +397,51 @@
         const btn = document.getElementById('btn-popup-save');
         btn.innerText = "+ 加入生字本 (Save)"; btn.disabled = false; btn.className = "mt-3 w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs py-1.5 rounded transition";
         
-        currentPopupData = { word: word, context: currentCards.map(c=>c.english).join(' ').substring(0, 100) }; 
+        currentPopupData = { word: word, context: currentArticleText.substring(0, 100) }; 
 
-        if (wordCache[word]) {
-            updatePopup(wordCache[word]);
-        } else {
+        if (wordCache[word]) updatePopup(wordCache[word]);
+        else {
             try {
                 const res = await callApi('translate', { word: word, context: currentPopupData.context });
-                if(res.status === 'success') {
-                    wordCache[word] = res.data;
-                    updatePopup(res.data);
-                } else {
-                    document.getElementById('popup-def').innerText = "Translation not found.";
-                }
-            } catch(e) {
-                document.getElementById('popup-def').innerText = "Error loading.";
-            }
+                if(res.status === 'success') { wordCache[word] = res.data; updatePopup(res.data); } 
+                else { document.getElementById('popup-def').innerText = "Translation not found."; }
+            } catch(e) { document.getElementById('popup-def').innerText = "Error loading."; }
         }
     }
-
     function updatePopup(data) {
         document.getElementById('popup-ipa').innerText = data.ipa || '';
         document.getElementById('popup-def').innerText = data.def;
         currentPopupData = { ...currentPopupData, ...data };
     }
-    
     function closePopup() { document.getElementById('word-popup').style.display = 'none'; }
     function playPopupAudio() { if(currentPopupData) speak(currentPopupData.word); }
-    
     function savePopupWord() {
         if(!currentPopupData || !currentPopupData.def) return;
-        const btn = document.getElementById('btn-popup-save');
-        btn.innerText = "儲存中...";
-        callApi('saveVocab', { 
-            userId: getUserId(), 
-            word: currentPopupData.word, 
-            ipa: currentPopupData.ipa, 
-            def: currentPopupData.def, 
-            ctx: currentPopupData.context, 
-            ctxChn: "(From Review)" 
-        }).then(() => {
-            btn.innerText = "✓ 已儲存 (Saved)"; btn.classList.replace('bg-indigo-600','bg-green-500'); btn.disabled=true;
-        });
+        const btn = document.getElementById('btn-popup-save'); btn.innerText = "儲存中...";
+        callApi('saveVocab', { userId: getUserId(), word: currentPopupData.word, ipa: currentPopupData.ipa, def: currentPopupData.def, ctx: currentPopupData.context, ctxChn: "(From Review)" })
+        .then(() => { btn.innerText = "✓ 已儲存 (Saved)"; btn.classList.replace('bg-indigo-600','bg-green-500'); btn.disabled=true; });
     }
 
-    // Full Audio
+    // Full Audio (Updated logic)
     function playFullArticle() {
         if(isPlayingFull){ stopFullAudio(); return; }
         isPlayingFull=true; document.getElementById('btn-read-all').innerText='🛑 停止朗讀 (Stop)'; window.speechSynthesis.cancel();
-        currentCards.forEach((c, i) => {
-            const u = new SpeechSynthesisUtterance(c.english);
-            u.lang='en-US'; const v=voices[document.getElementById('input-voice').value]; if(v)u.voice=v;
-            if(i===currentCards.length-1) u.onend = stopFullAudio;
-            window.speechSynthesis.speak(u);
-        });
+        
+        // 🔥 直接朗讀純文字，因為從圖書館載入的文章沒有 currentCards
+        const u = new SpeechSynthesisUtterance(currentArticleText);
+        u.lang = 'en-US'; 
+        const v = voices[document.getElementById('input-voice').value]; if(v)u.voice=v;
+        u.onend = stopFullAudio;
+        window.speechSynthesis.speak(u);
     }
     function stopFullAudio(){ window.speechSynthesis.cancel(); isPlayingFull=false; document.getElementById('btn-read-all').innerText='🔊 全文朗讀'; }
 
-    // Misc
+    // Word Bank & Misc
     function getUserId() { let u=localStorage.getItem('uid'); if(!u){u='user_'+Date.now();localStorage.setItem('uid',u);} return u; }
-    function openWordBank() { document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-wordbank').classList.remove('hidden'); document.getElementById('view-wordbank').classList.add('flex'); loadWordBank(); }
+    function openWordBank() { 
+        document.getElementById('view-input').classList.add('hidden'); 
+        document.getElementById('view-wordbank').classList.remove('hidden'); document.getElementById('view-wordbank').classList.add('flex'); loadWordBank(); 
+    }
     function loadWordBank() { 
         callApi('getVocab', { userId: getUserId() }).then(res => {
              const list = document.getElementById('wordbank-list');
@@ -410,14 +449,12 @@
              else list.innerHTML = res.data.map(w => `<div class="bg-gray-50 p-3 rounded-xl border border-gray-100 flex justify-between items-center"><div><div class="flex items-center gap-2"><span class="text-indigo-600 font-bold" onclick="speak('${w.word}')">🔊 ${w.word}</span><span class="text-xs text-gray-500">${w.ipa}</span></div><p class="text-sm text-gray-600">${w.def}</p></div><button onclick="delWord('${w.id}',this)" class="text-gray-300 hover:text-red-500">🗑️</button></div>`).join('');
         });
     }
-    function saveWord(w,i,d,btn){ btn.innerText="✓"; btn.disabled=true; callApi('saveVocab',{userId:getUserId(),word:w,ipa:i,def:d,ctx:currentCards[currentIndex].english,ctxChn:currentCards[currentIndex].chinese}); }
-    function delWord(id,btn){ if(confirm("確定刪除? (Delete?)")) callApi('delVocab',{userId:getUserId(),id}).then(()=>btn.closest('div').remove()); }
+    function saveWord(w,i,d,btn){ btn.innerText="✓"; btn.disabled=true; callApi('saveVocab',{userId:getUserId(),word:w,ipa:i,def:d,ctx:currentCards[currentIndex]?.english||w,ctxChn:"(From Lesson)"}); }
+    function delWord(id,btn){ if(confirm("確定刪除?")) callApi('delVocab',{userId:getUserId(),id}).then(()=>btn.closest('div').remove()); }
 
     document.addEventListener('click', function(e) {
         const popup = document.getElementById('word-popup');
-        if (popup.style.display === 'block' && !popup.contains(e.target) && !e.target.classList.contains('clickable-word')) {
-            closePopup();
-        }
+        if (popup.style.display === 'block' && !popup.contains(e.target) && !e.target.classList.contains('clickable-word')) closePopup();
     });
   </script>
 </body>
