@@ -74,47 +74,47 @@
       </div>
 
       <div class="mb-6 bg-gray-50 p-3 rounded-xl border border-gray-200">
-         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">🗣️ Voice</label>
+         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">🗣️ 朗讀聲音 Voice (English Only)</label>
          <select id="input-voice" class="w-full bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm outline-none"></select>
       </div>
 
       <div id="form-topic" class="block">
-        <input type="text" id="input-topic" class="w-full mb-4 px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Topic (e.g., Travel, AI...)">
+        <input type="text" id="input-topic" class="w-full mb-4 px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" placeholder="輸入主題 (Topic) - e.g., 旅遊, AI...">
         <div class="grid grid-cols-2 gap-4 mb-4">
           <select id="input-scenario" class="px-3 py-3 border rounded-xl bg-white text-sm text-indigo-700 font-semibold">
-            <option value="article">📘 Article</option>
-            <option value="conversation">💬 Dialogue</option>
-            <option value="news">📰 News Search</option>
+            <option value="article">📘 短文 (Article)</option>
+            <option value="conversation">💬 對話 (Dialogue)</option>
+            <option value="news">📰 新聞 (News Search)</option>
           </select>
           <select id="input-len-topic" class="px-3 py-3 border rounded-xl bg-white text-sm">
-            <option value="medium">Standard</option>
-            <option value="short">Short</option>
+            <option value="medium">標準長度 (Standard)</option>
+            <option value="short">短篇 (Short)</option>
           </select>
         </div>
         <select id="input-level" class="w-full mb-6 px-3 py-3 border rounded-xl bg-white text-sm">
-            <option value="elementary">Elementary</option>
-            <option value="high" selected>High School</option>
-            <option value="adult">Professional</option>
+            <option value="elementary">初級 (Elementary)</option>
+            <option value="high" selected>高中 (High School)</option>
+            <option value="adult">專業 (Professional)</option>
         </select>
-        <button onclick="submitTopic()" id="btn-topic" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition">✨ Start Learning</button>
+        <button onclick="submitTopic()" id="btn-topic" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition">✨ 開始學習 (Start Learning)</button>
       </div>
 
       <div id="form-paste" class="hidden">
-        <input type="text" id="input-title" class="w-full mb-3 px-4 py-3 border rounded-xl outline-none" placeholder="Title">
-        <textarea id="input-content" rows="4" class="w-full mb-4 px-4 py-3 border rounded-xl outline-none" placeholder="Paste English text..."></textarea>
+        <input type="text" id="input-title" class="w-full mb-3 px-4 py-3 border rounded-xl outline-none" placeholder="文章標題 (Title)">
+        <textarea id="input-content" rows="4" class="w-full mb-4 px-4 py-3 border rounded-xl outline-none" placeholder="在此貼上英文文章 (Paste English text)..."></textarea>
         <select id="input-len-paste" class="w-full mb-4 px-3 py-3 border rounded-xl bg-white text-sm">
-            <option value="medium">Standard</option>
+            <option value="medium">標準分段 (Standard)</option>
         </select>
-        <button onclick="submitPaste()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-xl shadow-lg transition">🚀 Analyze</button>
+        <button onclick="submitPaste()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-xl shadow-lg transition">🚀 開始分析 (Analyze)</button>
       </div>
       
-      <p id="loading-msg" class="hidden mt-6 text-center text-indigo-600 text-sm font-semibold animate-pulse">🤖 AI is writing...</p>
+      <p id="loading-msg" class="hidden mt-6 text-center text-indigo-600 text-sm font-semibold animate-pulse">🤖 AI 正在撰寫中 (AI is writing)...</p>
     </div>
   </div>
 
   <div id="view-cards" class="hidden w-full max-w-lg p-4 h-full flex-col justify-center">
     <div class="flex justify-between items-center mb-4 px-2">
-      <button onclick="goBackToMenu()" class="text-gray-500 hover:text-indigo-600 font-bold text-sm bg-white px-3 py-1.5 rounded-lg shadow-sm">🏠 Home</button>
+      <button onclick="goBackToMenu()" class="text-gray-500 hover:text-indigo-600 font-bold text-sm bg-white px-3 py-1.5 rounded-lg shadow-sm">🏠 首頁 (Home)</button>
       <div class="text-center"><h2 id="card-main-title" class="text-xs font-bold text-gray-400 uppercase truncate max-w-[150px]">Lesson</h2><span id="counter" class="font-mono text-indigo-600 font-bold text-sm">1 / 10</span></div>
     </div>
 
@@ -132,23 +132,23 @@
             <div id="vocab-area" class="border-t border-slate-600 pt-4 hidden"><div id="vocab-list" class="flex flex-wrap gap-2"></div></div>
           </div>
           <div class="mt-2 pt-3 border-t border-slate-600 flex gap-3">
-            <button onclick="speakTarget(event)" class="flex-1 bg-white/10 hover:bg-white/20 py-3 rounded-xl font-bold text-sm">🔊 Listen</button>
-            <button id="btn-mic" onclick="toggleRecording(event)" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-xl font-bold">🎤 Speak</button>
+            <button onclick="speakTarget(event)" class="flex-1 bg-white/10 hover:bg-white/20 py-3 rounded-xl font-bold text-sm">🔊 朗讀 (Listen)</button>
+            <button id="btn-mic" onclick="toggleRecording(event)" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-xl font-bold">🎤 跟讀 (Speak)</button>
           </div>
         </div>
       </div>
     </div>
     
     <div class="flex justify-between mt-6 gap-4">
-      <button onclick="prevCard()" class="flex-1 bg-white text-gray-700 py-3 rounded-xl font-bold shadow">← Prev</button>
-      <button onclick="nextCard()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg">Next →</button>
+      <button onclick="prevCard()" class="flex-1 bg-white text-gray-700 py-3 rounded-xl font-bold shadow">← 上一張</button>
+      <button onclick="nextCard()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg">下一張 →</button>
     </div>
   </div>
 
   <div id="view-review" class="hidden w-full max-w-lg p-6 h-full flex-col justify-center relative">
     <div class="bg-white rounded-3xl shadow-2xl p-6 h-[85vh] flex flex-col relative border border-gray-100">
       <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
-        <h2 class="text-xl font-bold text-gray-800 font-eng">📖 Full Article</h2>
+        <h2 class="text-xl font-bold text-gray-800 font-eng">📖 全文閱讀 (Full Article)</h2>
         <button onclick="goBackToMenu()" class="text-gray-400 font-bold text-sm">✕</button>
       </div>
       
@@ -167,14 +167,14 @@
             </div>
             <p id="popup-def" class="text-sm text-gray-700 font-chn leading-snug">Loading definition...</p>
             <button id="btn-popup-save" onclick="savePopupWord()" class="mt-3 w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs py-1.5 rounded transition">
-                + Save to Word Bank
+                + 加入生字本 (Save)
             </button>
          </div>
       </div>
 
       <div class="mt-4 pt-4 border-t border-gray-100 flex gap-3">
-        <button id="btn-read-all" onclick="playFullArticle()" class="flex-1 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">🔊 Read All</button>
-        <button onclick="goBackToMenu()" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold">🏠 Menu</button>
+        <button id="btn-read-all" onclick="playFullArticle()" class="flex-1 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">🔊 全文朗讀</button>
+        <button onclick="goBackToMenu()" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold">🏠 回首頁</button>
       </div>
     </div>
   </div>
@@ -186,28 +186,57 @@
         <button onclick="goBackToMenu()" class="text-gray-400 text-sm">✕</button>
       </div>
       <div id="wordbank-list" class="flex-grow overflow-y-auto custom-scroll space-y-3"><p class="text-center text-gray-400 mt-10">Loading...</p></div>
-      <button onclick="loadWordBank()" class="mt-4 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">↻ Refresh</button>
+      <button onclick="loadWordBank()" class="mt-4 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">↻ 重新整理 (Refresh)</button>
     </div>
   </div>
 
   <script>
-    // 🔥 已經更新為您最新的後端網址
+    // 🔥 您的最新後端網址 (已更新)
     const API_URL = "https://script.google.com/macros/s/AKfycbzTciZ2Z7Xrmc8IrV-VHqmJMT6rdbnnIbnE1j6YYKDv3yC3Av0fvofThL6pBmvj_GP0MQ/exec"; 
 
     let currentCards = [], currentIndex = 0, isPlayingFull = false, recognition, isRecording = false;
     let voices = [], wordCache = {}; // 單字快取
     let currentPopupData = null; // 當前彈窗資料
 
-    // TTS Setup
+    // 🔥 TTS Setup (強制篩選英文聲音，解決數字讀成中文問題)
     function loadVoices() {
       voices = window.speechSynthesis.getVoices();
       const select = document.getElementById('input-voice');
       select.innerHTML = '';
-      const eng = voices.filter(v => v.lang.includes('en'));
-      (eng.length ? eng : voices).forEach((v, i) => select.add(new Option(`${v.name} (${v.lang})`, i)));
-      select.value = voices.findIndex(v => v.name.includes('Google US')) || 0;
+      
+      // 1. 只篩選英文 (lang 開頭為 'en')
+      const engVoices = voices.filter(v => v.lang.startsWith('en'));
+      const listToShow = engVoices.length > 0 ? engVoices : voices;
+
+      listToShow.forEach((v) => {
+          const option = document.createElement('option');
+          option.value = voices.indexOf(v); // 使用原始索引
+          option.text = `${v.name} (${v.lang})`;
+          select.appendChild(option);
+      });
+
+      // 自動預選 Google US 或第一個英文
+      let defaultIdx = voices.findIndex(v => v.name.includes('Google US English'));
+      if (defaultIdx === -1) defaultIdx = voices.findIndex(v => v.lang === 'en-US');
+
+      if (defaultIdx !== -1) {
+          select.value = defaultIdx;
+      } else if (engVoices.length > 0) {
+          select.value = voices.indexOf(engVoices[0]);
+      }
     }
     window.speechSynthesis.onvoiceschanged = loadVoices; loadVoices();
+
+    // 🔥 Speak Function (強制設定 en-US)
+    function speak(txt){ 
+        window.speechSynthesis.cancel(); 
+        const u = new SpeechSynthesisUtterance(txt); 
+        u.lang = 'en-US'; 
+        const voiceIdx = document.getElementById('input-voice').value;
+        const v = voices[voiceIdx]; 
+        if(v) u.voice = v; 
+        window.speechSynthesis.speak(u); 
+    }
 
     async function callApi(action, params) {
       try {
@@ -234,11 +263,11 @@
 
     // Submit & Flow
     function submitTopic() {
-       const topic=document.getElementById('input-topic').value; if(!topic)return alert("Enter topic");
+       const topic=document.getElementById('input-topic').value; if(!topic)return alert("請輸入主題 (Please enter a topic)");
        startGen('generate', { topic, level:document.getElementById('input-level').value, len:document.getElementById('input-len-topic').value, scenario:document.getElementById('input-scenario').value });
     }
     function submitPaste() {
-       const txt=document.getElementById('input-content').value; if(!txt)return alert("Paste text");
+       const txt=document.getElementById('input-content').value; if(!txt)return alert("請貼上文章 (Please paste text)");
        startGen('import', { title:document.getElementById('input-title').value, content:txt, len:document.getElementById('input-len-paste').value });
     }
     function startGen(act, data) {
@@ -272,9 +301,8 @@
     function nextCard(){ if(currentIndex<currentCards.length-1){currentIndex++; renderCard();} else { showReviewPage(); } }
     function prevCard(){ if(currentIndex>0){currentIndex--; renderCard();} }
     function speakTarget(e){ e.stopPropagation(); speak(currentCards[currentIndex].english); }
-    function speak(txt){ window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(txt); u.lang='en-US'; const v=voices[document.getElementById('input-voice').value]; if(v)u.voice=v; window.speechSynthesis.speak(u); }
 
-    // 🔥🔥🔥 全文閱讀與點擊查字邏輯 (Review Page) 🔥🔥🔥
+    // 🔥🔥🔥 全文閱讀與點擊查字邏輯 🔥🔥🔥
     function showReviewPage() {
         document.getElementById('view-cards').classList.add('hidden');
         document.getElementById('view-cards').classList.remove('flex');
@@ -284,50 +312,39 @@
         document.getElementById('review-title').innerText = document.getElementById('card-main-title').innerText;
         const contentDiv = document.getElementById('review-content');
         
-        // 將文章拆解為單字
         const fullText = currentCards.map(c => c.english).join(' ');
-        // 簡單斷詞：以空格分割，保留標點符號的邏輯比較複雜，這裡用簡單版
-        // 技巧：將所有非字母字符視為分隔符，但保留在 UI 中會比較自然
-        // 為了簡單起見，我們將每個單字包裹在 span 中
-        const words = fullText.split(/(\s+)/); // 保留空格
+        const words = fullText.split(/(\s+)/); 
         
         contentDiv.innerHTML = words.map(w => {
-            if(w.trim().length === 0) return w; // 空格直接回傳
-            // 去除標點以便傳給 API，但顯示時保留
+            if(w.trim().length === 0) return w; 
             const rawWord = w.replace(/[^\w']/g, ""); 
             if(!rawWord) return w; 
             return `<span class="clickable-word" onclick="handleWordClick('${rawWord}', this)">${w}</span>`;
         }).join('');
     }
 
-    // 處理單字點擊
     async function handleWordClick(word, el) {
-        // 1. 播放聲音
         speak(word);
         
-        // 2. 顯示 Popup (定位)
         const popup = document.getElementById('word-popup');
         const rect = el.getBoundingClientRect();
         const parentRect = document.getElementById('view-review').getBoundingClientRect();
         
-        // 計算相對位置，避免被切掉
         let top = rect.top - parentRect.top - popup.offsetHeight - 10;
-        if(top < 0) top = rect.bottom - parentRect.top + 10; // 如果上面沒空間，顯示在下面
+        if(top < 0) top = rect.bottom - parentRect.top + 10;
         
         popup.style.top = `${top}px`;
         popup.style.left = `${rect.left - parentRect.left}px`;
         popup.style.display = 'block';
         
-        // 3. UI 初始化
         document.getElementById('popup-word').innerText = word;
         document.getElementById('popup-ipa').innerText = "...";
         document.getElementById('popup-def').innerText = "Translating...";
         const btn = document.getElementById('btn-popup-save');
-        btn.innerText = "+ Save to Word Bank"; btn.disabled = false; btn.className = "mt-3 w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs py-1.5 rounded transition";
+        btn.innerText = "+ 加入生字本 (Save)"; btn.disabled = false; btn.className = "mt-3 w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs py-1.5 rounded transition";
         
-        currentPopupData = { word: word, context: currentCards.map(c=>c.english).join(' ').substring(0, 100) }; // 簡單上下文
+        currentPopupData = { word: word, context: currentCards.map(c=>c.english).join(' ').substring(0, 100) }; 
 
-        // 4. 檢查快取 or 呼叫 API
         if (wordCache[word]) {
             updatePopup(wordCache[word]);
         } else {
@@ -357,7 +374,7 @@
     function savePopupWord() {
         if(!currentPopupData || !currentPopupData.def) return;
         const btn = document.getElementById('btn-popup-save');
-        btn.innerText = "Saving...";
+        btn.innerText = "儲存中...";
         callApi('saveVocab', { 
             userId: getUserId(), 
             word: currentPopupData.word, 
@@ -366,14 +383,14 @@
             ctx: currentPopupData.context, 
             ctxChn: "(From Review)" 
         }).then(() => {
-            btn.innerText = "✓ Saved"; btn.classList.replace('bg-indigo-600','bg-green-500'); btn.disabled=true;
+            btn.innerText = "✓ 已儲存 (Saved)"; btn.classList.replace('bg-indigo-600','bg-green-500'); btn.disabled=true;
         });
     }
 
     // Full Audio
     function playFullArticle() {
         if(isPlayingFull){ stopFullAudio(); return; }
-        isPlayingFull=true; document.getElementById('btn-read-all').innerText='🛑 Stop'; window.speechSynthesis.cancel();
+        isPlayingFull=true; document.getElementById('btn-read-all').innerText='🛑 停止朗讀 (Stop)'; window.speechSynthesis.cancel();
         currentCards.forEach((c, i) => {
             const u = new SpeechSynthesisUtterance(c.english);
             u.lang='en-US'; const v=voices[document.getElementById('input-voice').value]; if(v)u.voice=v;
@@ -381,7 +398,7 @@
             window.speechSynthesis.speak(u);
         });
     }
-    function stopFullAudio(){ window.speechSynthesis.cancel(); isPlayingFull=false; document.getElementById('btn-read-all').innerText='🔊 Read All'; }
+    function stopFullAudio(){ window.speechSynthesis.cancel(); isPlayingFull=false; document.getElementById('btn-read-all').innerText='🔊 全文朗讀'; }
 
     // Misc
     function getUserId() { let u=localStorage.getItem('uid'); if(!u){u='user_'+Date.now();localStorage.setItem('uid',u);} return u; }
@@ -389,14 +406,13 @@
     function loadWordBank() { 
         callApi('getVocab', { userId: getUserId() }).then(res => {
              const list = document.getElementById('wordbank-list');
-             if(!res.data.length) list.innerHTML='<p class="text-center text-gray-400 mt-4">No words yet.</p>';
+             if(!res.data.length) list.innerHTML='<p class="text-center text-gray-400 mt-4">尚無生字 (No words yet).</p>';
              else list.innerHTML = res.data.map(w => `<div class="bg-gray-50 p-3 rounded-xl border border-gray-100 flex justify-between items-center"><div><div class="flex items-center gap-2"><span class="text-indigo-600 font-bold" onclick="speak('${w.word}')">🔊 ${w.word}</span><span class="text-xs text-gray-500">${w.ipa}</span></div><p class="text-sm text-gray-600">${w.def}</p></div><button onclick="delWord('${w.id}',this)" class="text-gray-300 hover:text-red-500">🗑️</button></div>`).join('');
         });
     }
     function saveWord(w,i,d,btn){ btn.innerText="✓"; btn.disabled=true; callApi('saveVocab',{userId:getUserId(),word:w,ipa:i,def:d,ctx:currentCards[currentIndex].english,ctxChn:currentCards[currentIndex].chinese}); }
-    function delWord(id,btn){ if(confirm("Delete?")) callApi('delVocab',{userId:getUserId(),id}).then(()=>btn.closest('div').remove()); }
+    function delWord(id,btn){ if(confirm("確定刪除? (Delete?)")) callApi('delVocab',{userId:getUserId(),id}).then(()=>btn.closest('div').remove()); }
 
-    // Close popup on click outside
     document.addEventListener('click', function(e) {
         const popup = document.getElementById('word-popup');
         if (popup.style.display === 'block' && !popup.contains(e.target) && !e.target.classList.contains('clickable-word')) {
