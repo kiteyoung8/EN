@@ -43,7 +43,21 @@
 </head>
 <body class="bg-gray-100 h-screen flex flex-col items-center justify-center font-sans">
 
-  <div id="view-input" class="w-full max-w-lg p-6 transition-all duration-300">
+  <div id="view-login" class="fixed inset-0 bg-gray-900 bg-opacity-90 z-50 flex flex-col items-center justify-center p-6">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
+        <h1 class="text-2xl font-bold text-indigo-700 mb-2">👋 歡迎回來</h1>
+        <p class="text-gray-500 text-sm mb-6">請輸入匿名(中英皆可)以同步您的學習資料</p>
+        
+        <input type="text" id="login-username" class="w-full px-4 py-3 border border-gray-300 rounded-xl mb-4 text-center text-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="例如: Jason99">
+        
+        <button onclick="handleLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95">
+            🚀 進入系統 (Login)
+        </button>
+        <p class="text-xs text-gray-400 mt-4">* 手機與電腦輸入相同名稱即可共用資料</p>
+    </div>
+  </div>
+
+  <div id="view-input" class="hidden w-full max-w-lg p-6 transition-all duration-300">
     <div class="bg-white rounded-2xl shadow-xl p-8 relative">
       <div class="absolute top-4 right-4 flex gap-2">
         <button onclick="openLibrary()" class="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full transition" title="我的文章庫">
@@ -53,8 +67,13 @@
             <span class="text-xl">📚</span>
         </button>
       </div>
+      
+      <div class="absolute top-4 left-4 flex gap-2 items-center">
+        <span id="display-user" class="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">Guest</span>
+        <button onclick="handleLogout()" class="text-xs text-red-400 hover:underline">登出</button>
+      </div>
 
-      <div class="flex justify-center mb-6 border-b border-gray-200">
+      <div class="flex justify-center mt-6 mb-6 border-b border-gray-200">
         <button onclick="switchTab('topic')" id="tab-topic" class="border-b-2 border-indigo-600 text-indigo-600 font-bold px-6 py-2">✨ AI 生成</button>
         <button onclick="switchTab('paste')" id="tab-paste" class="text-gray-500 px-6 py-2">📋 貼上文章</button>
       </div>
@@ -212,6 +231,52 @@
     let voices = [], wordCache = {}; 
     let currentPopupData = null;
     let currentArticleText = "";
+    let currentUserId = ""; // 🔥 用來存目前登入的使用者 ID
+
+    // 🔥 0. 初始化與登入檢查
+    function init() {
+        const savedUser = localStorage.getItem('gem_username');
+        if (savedUser) {
+            currentUserId = savedUser;
+            document.getElementById('display-user').innerText = currentUserId;
+            document.getElementById('view-login').classList.add('hidden');
+            document.getElementById('view-input').classList.remove('hidden');
+        } else {
+            document.getElementById('view-login').classList.remove('hidden');
+        }
+        loadVoices();
+    }
+
+    // 🔥 登入功能
+    function handleLogin() {
+        const nameInput = document.getElementById('login-username').value.trim();
+        if (!nameInput) return alert("請輸入姓名 (Please enter your name)");
+        
+        currentUserId = nameInput;
+        localStorage.setItem('gem_username', currentUserId); // 存入 localStorage
+        
+        document.getElementById('display-user').innerText = currentUserId;
+        document.getElementById('view-login').classList.add('hidden');
+        document.getElementById('view-input').classList.remove('hidden');
+    }
+
+    // 🔥 登出功能
+    function handleLogout() {
+        localStorage.removeItem('gem_username');
+        currentUserId = "";
+        location.reload(); // 重新整理頁面
+    }
+
+    // 🔥 取得使用者 ID (取代舊的亂數邏輯)
+    function getUserId() {
+        if (!currentUserId) {
+            // 如果意外沒有 ID，強制重新登入
+            document.getElementById('view-input').classList.add('hidden');
+            document.getElementById('view-login').classList.remove('hidden');
+            throw new Error("請先登入");
+        }
+        return currentUserId;
+    }
 
     // TTS Setup
     function loadVoices() {
@@ -231,30 +296,26 @@
       if (defaultIdx !== -1) select.value = defaultIdx;
       else if (engVoices.length > 0) select.value = voices.indexOf(engVoices[0]);
     }
-    window.speechSynthesis.onvoiceschanged = loadVoices; loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
 
-    // 🔥 速度調整監聽 (首頁)
+    // 速度調整監聽
     document.getElementById('input-rate').addEventListener('input', (e) => {
         document.getElementById('speed-val').innerText = e.target.value;
     });
-    // 🔥 速度調整監聽 (閱讀頁)
     document.getElementById('input-rate-review').addEventListener('input', (e) => {
         document.getElementById('speed-val-review').innerText = e.target.value;
     });
 
-    // 🔥 Speak Function (智慧判斷速度來源)
+    // Speak Function
     function speak(txt){ 
         window.speechSynthesis.cancel(); 
         const u = new SpeechSynthesisUtterance(txt); 
         u.lang = 'en-US'; 
         
-        // 判斷目前在哪個頁面，決定讀取哪個速度條
         let rate = 1;
         if (!document.getElementById('view-review').classList.contains('hidden')) {
-             // 如果在閱讀頁，用閱讀頁的速度
              rate = parseFloat(document.getElementById('input-rate-review').value) || 1;
         } else {
-             // 否則用首頁速度
              rate = parseFloat(document.getElementById('input-rate').value) || 1;
         }
         u.rate = rate;
@@ -340,7 +401,6 @@
         const view = document.getElementById('view-review');
         view.classList.remove('hidden'); view.classList.add('flex');
         
-        // 🔥 同步首頁的速度設定到閱讀頁
         const homeRate = document.getElementById('input-rate').value;
         document.getElementById('input-rate-review').value = homeRate;
         document.getElementById('speed-val-review').innerText = homeRate;
@@ -463,7 +523,7 @@
         }).then(() => { btn.innerText = "✓ 已儲存"; btn.classList.replace('bg-indigo-600','bg-green-500'); btn.disabled=true; });
     }
 
-    // 🔥 Full Audio (使用新的速度控制)
+    // Full Audio
     function playFullArticle() {
         if(isPlayingFull){ stopFullAudio(); return; }
         isPlayingFull=true; document.getElementById('btn-read-all').innerText='🛑 停止朗讀 (Stop)'; window.speechSynthesis.cancel();
@@ -482,7 +542,6 @@
     function stopFullAudio(){ window.speechSynthesis.cancel(); isPlayingFull=false; document.getElementById('btn-read-all').innerText='🔊 全文朗讀'; }
 
     // Word Bank
-    function getUserId() { let u=localStorage.getItem('uid'); if(!u){u='user_'+Date.now();localStorage.setItem('uid',u);} return u; }
     function openWordBank() { 
         document.getElementById('view-input').classList.add('hidden'); 
         document.getElementById('view-wordbank').classList.remove('hidden'); document.getElementById('view-wordbank').classList.add('flex'); loadWordBank(); 
@@ -529,6 +588,9 @@
         const popup = document.getElementById('word-popup');
         if (popup.style.display === 'block' && !popup.contains(e.target) && !e.target.classList.contains('clickable-word')) closePopup();
     });
+
+    // 🔥 啟動初始化
+    init();
   </script>
 </body>
 </html>
