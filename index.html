@@ -61,7 +61,17 @@
 
       <div class="mb-6 bg-gray-50 p-3 rounded-xl border border-gray-200">
          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">🗣️ 朗讀聲音 Voice (English Only)</label>
-         <select id="input-voice" class="w-full bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm outline-none"></select>
+         <select id="input-voice" class="w-full bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm outline-none mb-3"></select>
+         
+         <div class="flex justify-between items-center mb-1">
+             <label class="block text-xs font-bold text-gray-500 uppercase">⚡ 朗讀速度 Speed: <span id="speed-val" class="text-indigo-600 font-bold">1.0</span>x</label>
+         </div>
+         <input type="range" id="input-rate" min="0.5" max="2" step="0.1" value="1" class="w-full accent-indigo-600 cursor-pointer">
+         <div class="flex justify-between text-xs text-gray-400 px-1">
+             <span>0.5x</span>
+             <span>1.0x</span>
+             <span>2.0x</span>
+         </div>
       </div>
 
       <div id="form-topic" class="block">
@@ -221,10 +231,21 @@
     }
     window.speechSynthesis.onvoiceschanged = loadVoices; loadVoices();
 
+    // 🔥 速度調整監聽
+    document.getElementById('input-rate').addEventListener('input', (e) => {
+        document.getElementById('speed-val').innerText = e.target.value;
+    });
+
+    // 🔥 Speak Function (加入速度控制)
     function speak(txt){ 
         window.speechSynthesis.cancel(); 
         const u = new SpeechSynthesisUtterance(txt); 
         u.lang = 'en-US'; 
+        
+        // 讀取速度設定
+        const rate = parseFloat(document.getElementById('input-rate').value) || 1;
+        u.rate = rate;
+
         const voiceIdx = document.getElementById('input-voice').value;
         const v = voices[voiceIdx]; 
         if(v) u.voice = v; 
@@ -290,7 +311,6 @@
         const vList = document.getElementById('vocab-list');
         if(c.vocabulary && c.vocabulary.length){
             document.getElementById('vocab-area').classList.remove('hidden');
-            // 注意：存單字時，將英文句子與中文翻譯都存入
             vList.innerHTML = c.vocabulary.map(v => `<button onclick="event.stopPropagation();saveWord('${v.word}','${v.ipa}','${v.def}', '${escape(c.english)}', '${escape(c.chinese)}', this)" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-full">+ ${v.word}</button>`).join('');
         } else { document.getElementById('vocab-area').classList.add('hidden'); }
         document.querySelector('.group').classList.remove('flipped');
@@ -412,7 +432,6 @@
     function closePopup() { document.getElementById('word-popup').style.display = 'none'; }
     function playPopupAudio() { if(currentPopupData) speak(currentPopupData.word); }
     
-    // 🔥 優化存檔邏輯：確保如果有 AI 翻譯的例句，就存翻譯；如果沒有，存 "Source"
     function savePopupWord() {
         if(!currentPopupData || !currentPopupData.def) return;
         const btn = document.getElementById('btn-popup-save'); btn.innerText = "儲存中...";
@@ -422,16 +441,22 @@
             ipa: currentPopupData.ipa, 
             def: currentPopupData.def, 
             ctx: currentPopupData.context, 
-            ctxChn: currentPopupData.example_chn || "(From Review)" // 如果沒有 AI 翻譯，則標記來源
+            ctxChn: currentPopupData.example_chn || "(From Review)" 
         }).then(() => { btn.innerText = "✓ 已儲存"; btn.classList.replace('bg-indigo-600','bg-green-500'); btn.disabled=true; });
     }
 
-    // Full Audio
+    // 🔥 Full Audio (加入速度控制)
     function playFullArticle() {
         if(isPlayingFull){ stopFullAudio(); return; }
         isPlayingFull=true; document.getElementById('btn-read-all').innerText='🛑 停止朗讀 (Stop)'; window.speechSynthesis.cancel();
+        
         const u = new SpeechSynthesisUtterance(currentArticleText);
         u.lang = 'en-US'; 
+        
+        // 讀取速度設定
+        const rate = parseFloat(document.getElementById('input-rate').value) || 1;
+        u.rate = rate;
+
         const v = voices[document.getElementById('input-voice').value]; if(v)u.voice=v;
         u.onend = stopFullAudio;
         window.speechSynthesis.speak(u);
@@ -445,7 +470,6 @@
         document.getElementById('view-wordbank').classList.remove('hidden'); document.getElementById('view-wordbank').classList.add('flex'); loadWordBank(); 
     }
     
-    // 🔥🔥 關鍵修復：處理單字中的單引號，防止 HTML 崩壞 🔥🔥
     function loadWordBank() { 
         callApi('getVocab', { userId: getUserId() }).then(res => {
              const list = document.getElementById('wordbank-list');
