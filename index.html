@@ -153,14 +153,19 @@
       </div>
       
       <div class="flex-grow overflow-y-auto custom-scroll relative pr-2">
-         <h3 id="review-title" class="text-xl font-bold text-indigo-700 mb-4 font-eng">Title</h3>
-         <div id="review-content" class="prose text-gray-800 font-eng text-lg leading-loose mb-8"></div>
          
-         <hr class="border-t-2 border-dashed border-gray-200 my-6">
+         <div id="english-area">
+             <h3 id="review-title" class="text-2xl font-bold text-indigo-700 mb-4 font-eng clickable-word" onclick="speak(this.innerText)">Title</h3>
+             <div id="review-content" class="prose text-gray-800 font-eng text-lg leading-loose mb-6"></div>
+         </div>
          
-         <h3 class="text-lg font-bold text-gray-500 mb-2 font-chn">💡 中文參考翻譯</h3>
-         <div id="review-content-chn" class="prose text-gray-500 font-chn text-base leading-relaxed">
-             (翻譯載入中...)
+         <hr class="border-t-4 border-indigo-100 my-8 rounded-full">
+         
+         <div id="chinese-area">
+             <h3 class="text-sm font-bold text-gray-400 mb-3 font-chn bg-gray-100 inline-block px-2 py-1 rounded">💡 中文翻譯 (Reference)</h3>
+             <div id="review-content-chn" class="prose text-gray-500 font-chn text-base leading-relaxed">
+                 (翻譯載入中...)
+             </div>
          </div>
 
          <div id="word-popup">
@@ -219,7 +224,8 @@
     let voices = [], wordCache = {}; 
     let currentPopupData = null;
     let currentArticleText = "";
-    let currentArticleChinese = ""; // 🔥 用來存整篇中文翻譯
+    let currentArticleChinese = "";
+    let currentArticleTitle = ""; // 存標題
     let currentUserId = ""; 
 
     function init() {
@@ -330,18 +336,21 @@
     }
     function submitPaste() {
        const txt=document.getElementById('input-content').value; if(!txt)return alert("請貼上文章");
-       startGen('import', { title:document.getElementById('input-title').value, content:txt, len:document.getElementById('input-len-paste').value });
+       // 如果是貼上模式，title 來自 input，必須傳給後端鎖定
+       const title = document.getElementById('input-title').value; 
+       startGen('import', { title: title, content:txt, len:document.getElementById('input-len-paste').value });
     }
+
     function startGen(act, data) {
         document.getElementById('loading-msg').classList.remove('hidden');
         callApi(act, data).then(res => {
             document.getElementById('loading-msg').classList.add('hidden');
             currentCards = res.data.cards; currentIndex = 0;
             currentArticleText = currentCards.map(c => c.english).join(' ');
-            // 🔥 組裝整篇中文翻譯
             currentArticleChinese = currentCards.map(c => c.chinese).join('<br><br>');
+            currentArticleTitle = res.data.title || 'Lesson'; // 使用後端回傳的標題 (已包含鎖定邏輯)
             
-            document.getElementById('card-main-title').innerText = res.data.title || 'Lesson';
+            document.getElementById('card-main-title').innerText = currentArticleTitle;
             document.getElementById('view-input').classList.add('hidden');
             document.getElementById('view-cards').classList.remove('hidden');
             document.getElementById('view-cards').classList.add('flex');
@@ -383,7 +392,9 @@
             saveBtn.innerHTML = "💾 儲存 (Save)"; saveBtn.disabled = false; saveBtn.classList.remove('text-gray-400');
         }
 
-        document.getElementById('review-title').innerText = document.getElementById('card-main-title').innerText;
+        // 🔥 設定標題
+        document.getElementById('review-title').innerText = currentArticleTitle;
+        
         const contentDiv = document.getElementById('review-content');
         
         const words = currentArticleText.split(/(\s+)/); 
@@ -394,19 +405,16 @@
             return `<span class="clickable-word" onclick="handleWordClick('${rawWord}', this)">${w}</span>`;
         }).join('');
 
-        // 🔥 顯示中文翻譯 (如果有)
         document.getElementById('review-content-chn').innerHTML = currentArticleChinese || "(暫無翻譯)";
     }
 
     function saveCurrentArticle() {
-        const title = document.getElementById('card-main-title').innerText;
         if(!currentArticleText) return;
         const btn = document.getElementById('btn-save-article');
         btn.innerText = "Saving...";
-        // 🔥 存檔時，也把中文翻譯送過去
         callApi('saveArticle', { 
             userId: getUserId(), 
-            title: title, 
+            title: currentArticleTitle, 
             content: currentArticleText,
             contentChn: currentArticleChinese 
         }).then(() => {
@@ -434,7 +442,7 @@
                 </div>`).join('');
         });
     }
-    // 🔥 修改：讀取時也讀取中文
+    
     function readArchivedArticle(title, contentEscaped, contentChnEscaped) {
         const content = unescape(contentEscaped);
         const contentChn = contentChnEscaped && contentChnEscaped !== 'undefined' ? unescape(contentChnEscaped) : "";
@@ -442,7 +450,7 @@
         document.getElementById('view-library').classList.add('hidden');
         document.getElementById('view-library').classList.remove('flex');
         
-        document.getElementById('card-main-title').innerText = title;
+        currentArticleTitle = title;
         currentArticleText = content;
         currentArticleChinese = contentChn;
         
@@ -457,6 +465,7 @@
         const popup = document.getElementById('word-popup');
         const rect = el.getBoundingClientRect();
         
+        const parentRect = document.getElementById('view-review').getBoundingClientRect(); // 確保相對於視窗
         let top = rect.top - parentRect.top - popup.offsetHeight - 10;
         if(top < 0) top = rect.bottom - parentRect.top + 10;
         popup.style.top = `${top}px`; popup.style.left = `${rect.left - parentRect.left}px`;
@@ -504,12 +513,15 @@
         }).then(() => { btn.innerText = "✓ 已儲存"; btn.classList.replace('bg-indigo-600','bg-green-500'); btn.disabled=true; });
     }
 
+    // 🔥 全文朗讀：只讀英文 (標題 + 內文)
     function playFullArticle() {
         if(isPlayingFull){ stopFullAudio(); return; }
         isPlayingFull=true; document.getElementById('btn-read-all').innerText='🛑 停止朗讀 (Stop)'; window.speechSynthesis.cancel();
         
-        // 朗讀時只讀英文 (currentArticleText)
-        const u = new SpeechSynthesisUtterance(currentArticleText);
+        // 朗讀內容：標題 + 句點 + 內文
+        const textToRead = currentArticleTitle + ". " + currentArticleText;
+        
+        const u = new SpeechSynthesisUtterance(textToRead);
         u.lang = 'en-US'; 
         const rate = parseFloat(document.getElementById('input-rate-review').value) || 1;
         u.rate = rate;
