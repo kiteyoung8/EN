@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   
   <style>
+    /* 字體與基礎設定 */
     .font-eng { font-family: 'Merriweather', serif; }
     .font-chn { font-family: 'Noto Sans TC', sans-serif; }
     .custom-scroll::-webkit-scrollbar { width: 6px; }
@@ -30,7 +31,7 @@
     #word-popup {
         position: absolute; z-index: 50; background: white; border-radius: 12px;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-        border: 1px solid #e5e7eb; padding: 12px; min-width: 220px; max-width: 300px; display: none;
+        border: 1px solid #e5e7eb; padding: 12px; min-width: 200px; max-width: 300px; display: none;
         animation: popup-fade 0.2s ease-out;
     }
     @keyframes popup-fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -289,7 +290,7 @@
         const vList = document.getElementById('vocab-list');
         if(c.vocabulary && c.vocabulary.length){
             document.getElementById('vocab-area').classList.remove('hidden');
-            // 注意：這裡使用 c.english 作為 ctx， c.chinese 作為 ctxChn
+            // 注意：存單字時，將英文句子與中文翻譯都存入
             vList.innerHTML = c.vocabulary.map(v => `<button onclick="event.stopPropagation();saveWord('${v.word}','${v.ipa}','${v.def}', '${escape(c.english)}', '${escape(c.chinese)}', this)" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-full">+ ${v.word}</button>`).join('');
         } else { document.getElementById('vocab-area').classList.add('hidden'); }
         document.querySelector('.group').classList.remove('flipped');
@@ -386,11 +387,9 @@
         const btn = document.getElementById('btn-popup-save');
         btn.innerText = "+ 加入生字本 (Save)"; btn.disabled = false; btn.className = "mt-3 w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs py-1.5 rounded transition";
         
-        // 擷取上下文：前後 50 個字元
         let startIdx = Math.max(0, currentArticleText.indexOf(word) - 50);
         let endIdx = Math.min(currentArticleText.length, currentArticleText.indexOf(word) + word.length + 50);
         let contextSnippet = currentArticleText.substring(startIdx, endIdx).trim();
-        // 嘗試抓完整句子 (更聰明一點)
         const sentences = currentArticleText.match(/[^\.!\?]+[\.!\?]+/g) || [currentArticleText];
         const exactSentence = sentences.find(s => s.includes(word)) || contextSnippet;
 
@@ -408,23 +407,22 @@
     function updatePopup(data) {
         document.getElementById('popup-ipa').innerText = data.ipa || '';
         document.getElementById('popup-def').innerText = data.def;
-        // 將 AI 回傳的例句翻譯存入 (如果有)
         currentPopupData = { ...currentPopupData, ...data };
     }
     function closePopup() { document.getElementById('word-popup').style.display = 'none'; }
     function playPopupAudio() { if(currentPopupData) speak(currentPopupData.word); }
     
+    // 🔥 優化存檔邏輯：確保如果有 AI 翻譯的例句，就存翻譯；如果沒有，存 "Source"
     function savePopupWord() {
         if(!currentPopupData || !currentPopupData.def) return;
         const btn = document.getElementById('btn-popup-save'); btn.innerText = "儲存中...";
-        // 傳送 word, ipa, def, context(英文句子), contextChn(AI翻譯的中文句子)
         callApi('saveVocab', { 
             userId: getUserId(), 
             word: currentPopupData.word, 
             ipa: currentPopupData.ipa, 
             def: currentPopupData.def, 
             ctx: currentPopupData.context, 
-            ctxChn: currentPopupData.example_chn || "(尚無翻譯)" 
+            ctxChn: currentPopupData.example_chn || "(From Review)" // 如果沒有 AI 翻譯，則標記來源
         }).then(() => { btn.innerText = "✓ 已儲存"; btn.classList.replace('bg-indigo-600','bg-green-500'); btn.disabled=true; });
     }
 
@@ -447,16 +445,20 @@
         document.getElementById('view-wordbank').classList.remove('hidden'); document.getElementById('view-wordbank').classList.add('flex'); loadWordBank(); 
     }
     
-    // 🔥🔥 修改：生字本顯示邏輯 (增加例句顯示與朗讀) 🔥🔥
+    // 🔥🔥 關鍵修復：處理單字中的單引號，防止 HTML 崩壞 🔥🔥
     function loadWordBank() { 
         callApi('getVocab', { userId: getUserId() }).then(res => {
              const list = document.getElementById('wordbank-list');
              if(!res.data.length) list.innerHTML='<p class="text-center text-gray-400 mt-4">尚無生字 (No words yet).</p>';
-             else list.innerHTML = res.data.map(w => `
+             else list.innerHTML = res.data.map(w => {
+                // 安全處理：將單引號 (') 替換為 HTML 實體 (&#39;)
+                const safeContext = w.context.replace(/'/g, "&#39;");
+                
+                return `
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-3">
                     <div class="flex justify-between items-start mb-2">
                         <div class="flex items-center gap-2">
-                            <span class="text-xl font-bold text-indigo-700 cursor-pointer hover:text-indigo-900" onclick="speak('${w.word}')">🔊 ${w.word}</span>
+                            <span class="text-xl font-bold text-indigo-700 cursor-pointer hover:text-indigo-900" onclick="speak('${w.word.replace(/'/g, "\\'")}')">🔊 ${w.word}</span>
                             <span class="text-sm font-mono text-gray-500 bg-white px-1 rounded border border-gray-200">${w.ipa}</span>
                         </div>
                         <button onclick="delWord('${w.id}',this)" class="text-gray-300 hover:text-red-500 p-1">🗑️</button>
@@ -465,18 +467,18 @@
                     <p class="text-gray-700 font-chn mb-3 font-bold border-b border-gray-200 pb-2">${w.def}</p>
                     
                     <div class="bg-white p-3 rounded-lg border border-gray-100 text-sm">
-                        <p class="text-gray-800 font-eng mb-1 cursor-pointer hover:text-indigo-600 transition" onclick="speak('${w.context.replace(/'/g, "\\'")}')">
+                        <p class="text-gray-800 font-eng mb-1 cursor-pointer hover:text-indigo-600 transition" onclick="speak('${safeContext}')">
                            🔊 ${w.context}
                         </p>
                         <p class="text-gray-500 font-chn text-xs mt-1">
                            ${w.contextChn || "..."}
                         </p>
                     </div>
-                </div>`).join('');
+                </div>`;
+             }).join('');
         });
     }
 
-    // 儲存單字 (從卡片模式)
     function saveWord(w,i,d,ctxEscaped,ctxChnEscaped,btn){ 
         btn.innerText="✓"; btn.disabled=true; 
         callApi('saveVocab',{userId:getUserId(),word:w,ipa:i,def:d,ctx:unescape(ctxEscaped),ctxChn:unescape(ctxChnEscaped)}); 
