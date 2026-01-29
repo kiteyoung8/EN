@@ -31,7 +31,7 @@
     #word-popup {
         position: absolute; z-index: 50; background: white; border-radius: 12px;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-        border: 1px solid #e5e7eb; padding: 12px; min-width: 200px; max-width: 300px; display: none;
+        border: 1px solid #e5e7eb; padding: 12px; min-width: 220px; max-width: 300px; display: none;
         animation: popup-fade 0.2s ease-out;
     }
     @keyframes popup-fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -64,14 +64,9 @@
          <select id="input-voice" class="w-full bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm outline-none mb-3"></select>
          
          <div class="flex justify-between items-center mb-1">
-             <label class="block text-xs font-bold text-gray-500 uppercase">⚡ 朗讀速度 Speed: <span id="speed-val" class="text-indigo-600 font-bold">1.0</span>x</label>
+             <label class="block text-xs font-bold text-gray-500 uppercase">⚡ 預設速度 Speed: <span id="speed-val" class="text-indigo-600 font-bold">1.0</span>x</label>
          </div>
          <input type="range" id="input-rate" min="0.5" max="2" step="0.1" value="1" class="w-full accent-indigo-600 cursor-pointer">
-         <div class="flex justify-between text-xs text-gray-400 px-1">
-             <span>0.5x</span>
-             <span>1.0x</span>
-             <span>2.0x</span>
-         </div>
       </div>
 
       <div id="form-topic" class="block">
@@ -173,9 +168,16 @@
          </div>
       </div>
 
-      <div class="mt-4 pt-4 border-t border-gray-100 flex gap-3">
-        <button id="btn-read-all" onclick="playFullArticle()" class="flex-1 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">🔊 全文朗讀</button>
-        <button onclick="goBackToMenu()" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold">🏠 回首頁</button>
+      <div class="mt-4 pt-4 border-t border-gray-100">
+        <div class="mb-3 bg-gray-50 px-3 py-2 rounded-xl flex justify-between items-center border border-gray-200">
+             <label class="text-xs font-bold text-gray-500 uppercase flex-shrink-0 mr-2">⚡ 速度 (Speed): <span id="speed-val-review" class="text-indigo-600">1.0</span>x</label>
+             <input type="range" id="input-rate-review" min="0.5" max="2" step="0.1" value="1" class="w-full accent-indigo-600 cursor-pointer">
+        </div>
+
+        <div class="flex gap-3">
+            <button id="btn-read-all" onclick="playFullArticle()" class="flex-1 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">🔊 全文朗讀</button>
+            <button onclick="goBackToMenu()" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold">🏠 回首頁</button>
+        </div>
       </div>
     </div>
   </div>
@@ -231,19 +233,30 @@
     }
     window.speechSynthesis.onvoiceschanged = loadVoices; loadVoices();
 
-    // 🔥 速度調整監聽
+    // 🔥 速度調整監聽 (首頁)
     document.getElementById('input-rate').addEventListener('input', (e) => {
         document.getElementById('speed-val').innerText = e.target.value;
     });
+    // 🔥 速度調整監聽 (閱讀頁)
+    document.getElementById('input-rate-review').addEventListener('input', (e) => {
+        document.getElementById('speed-val-review').innerText = e.target.value;
+    });
 
-    // 🔥 Speak Function (加入速度控制)
+    // 🔥 Speak Function (智慧判斷速度來源)
     function speak(txt){ 
         window.speechSynthesis.cancel(); 
         const u = new SpeechSynthesisUtterance(txt); 
         u.lang = 'en-US'; 
         
-        // 讀取速度設定
-        const rate = parseFloat(document.getElementById('input-rate').value) || 1;
+        // 判斷目前在哪個頁面，決定讀取哪個速度條
+        let rate = 1;
+        if (!document.getElementById('view-review').classList.contains('hidden')) {
+             // 如果在閱讀頁，用閱讀頁的速度
+             rate = parseFloat(document.getElementById('input-rate-review').value) || 1;
+        } else {
+             // 否則用首頁速度
+             rate = parseFloat(document.getElementById('input-rate').value) || 1;
+        }
         u.rate = rate;
 
         const voiceIdx = document.getElementById('input-voice').value;
@@ -327,6 +340,11 @@
         const view = document.getElementById('view-review');
         view.classList.remove('hidden'); view.classList.add('flex');
         
+        // 🔥 同步首頁的速度設定到閱讀頁
+        const homeRate = document.getElementById('input-rate').value;
+        document.getElementById('input-rate-review').value = homeRate;
+        document.getElementById('speed-val-review').innerText = homeRate;
+
         const saveBtn = document.getElementById('btn-save-article');
         if(isFromLibrary) {
             saveBtn.innerHTML = "📂 已收藏 (Saved)"; saveBtn.disabled = true; saveBtn.classList.add('text-gray-400');
@@ -445,7 +463,7 @@
         }).then(() => { btn.innerText = "✓ 已儲存"; btn.classList.replace('bg-indigo-600','bg-green-500'); btn.disabled=true; });
     }
 
-    // 🔥 Full Audio (加入速度控制)
+    // 🔥 Full Audio (使用新的速度控制)
     function playFullArticle() {
         if(isPlayingFull){ stopFullAudio(); return; }
         isPlayingFull=true; document.getElementById('btn-read-all').innerText='🛑 停止朗讀 (Stop)'; window.speechSynthesis.cancel();
@@ -453,8 +471,8 @@
         const u = new SpeechSynthesisUtterance(currentArticleText);
         u.lang = 'en-US'; 
         
-        // 讀取速度設定
-        const rate = parseFloat(document.getElementById('input-rate').value) || 1;
+        // 讀取閱讀頁面的速度滑桿
+        const rate = parseFloat(document.getElementById('input-rate-review').value) || 1;
         u.rate = rate;
 
         const v = voices[document.getElementById('input-voice').value]; if(v)u.voice=v;
@@ -475,9 +493,7 @@
              const list = document.getElementById('wordbank-list');
              if(!res.data.length) list.innerHTML='<p class="text-center text-gray-400 mt-4">尚無生字 (No words yet).</p>';
              else list.innerHTML = res.data.map(w => {
-                // 安全處理：將單引號 (') 替換為 HTML 實體 (&#39;)
                 const safeContext = w.context.replace(/'/g, "&#39;");
-                
                 return `
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-3">
                     <div class="flex justify-between items-start mb-2">
