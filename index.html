@@ -1,75 +1,261 @@
-// 🔥 前端 API 地址 (請確保填入最新的部署網址)
-const API_URL = "https://script.google.com/macros/s/AKfycbzTciZ2Z7Xrmc8IrV-VHqmJMT6rdbnnIbnE1j6YYKDv3yC3Av0fvofThL6pBmvj_GP0MQ/exec";
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GemArticle - AI 教練</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    .font-eng { font-family: 'Merriweather', serif; }
+    .font-chn { font-family: 'Noto Sans TC', sans-serif; }
+    .perspective-1000 { perspective: 1000px; }
+    .transform-style-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; }
+    .rotate-y-180 { transform: rotateY(180deg); }
+    .group.flipped .content-box { transform: rotateY(180deg); }
+    .clickable-word { cursor: pointer; padding: 2px 0; border-radius: 4px; transition: 0.2s; }
+    .clickable-word:hover { background: #e0e7ff; color: #4338ca; text-decoration: underline; }
+  </style>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col items-center justify-center font-sans">
 
-let currentCards = [], currentIndex = 0, isPlayingFull = false;
-let currentArticleText = "", currentArticleChinese = "", currentArticleTitle = "";
-let currentUserId = "", voices = [];
+  <div id="view-login" class="fixed inset-0 bg-gray-900 bg-opacity-90 z-50 flex flex-col items-center justify-center p-6">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
+        <h1 class="text-2xl font-bold text-indigo-700 mb-6">👋 歡迎回來</h1>
+        <input type="text" id="login-username" class="w-full px-4 py-3 border border-gray-300 rounded-xl mb-4 text-center text-lg" placeholder="輸入姓名">
+        <button onclick="handleLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition active:scale-95">進入系統</button>
+    </div>
+  </div>
 
-// --- 🎙️ 語音合成：AI 優先 + 瀏覽器備援 ---
-async function speak(txt, version = 'A_Professional') {
-    if (!txt) return;
-    window.speechSynthesis.cancel();
-    const oldAudio = document.getElementById('ai-audio-player');
-    if (oldAudio) oldAudio.pause();
+  <div id="view-input" class="hidden w-full max-w-lg p-6">
+    <div class="bg-white rounded-2xl shadow-xl p-8 relative">
+      <div class="absolute top-4 right-4 flex gap-2">
+        <button onclick="openLibrary()" title="文章庫" class="text-xl">📂</button>
+        <button onclick="openWordBank()" title="生字本" class="text-xl">📚</button>
+      </div>
+      <div class="absolute top-4 left-4 flex gap-2 items-center">
+        <span id="display-user" class="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">Guest</span>
+        <button onclick="handleLogout()" class="text-xs text-red-400">登出</button>
+      </div>
 
-    try {
-        // 請求 AI 嗓子網址
-        const res = await fetch(API_URL, {
-            method: "POST",
-            body: JSON.stringify({ action: 'tts', text: txt, version: version })
-        });
-        const json = await res.json();
+      <div class="flex justify-center mt-6 mb-6 border-b border-gray-200">
+        <button onclick="switchTab('topic')" id="tab-topic" class="border-b-2 border-indigo-600 text-indigo-600 font-bold px-6 py-2">✨ AI 生成</button>
+        <button onclick="switchTab('paste')" id="tab-paste" class="text-gray-500 px-6 py-2">📋 貼上文章</button>
+      </div>
 
-        if (json.status === 'success' && json.audioUrl) {
-            let player = document.getElementById('ai-audio-player') || document.createElement('audio');
-            player.id = 'ai-audio-player';
-            if (!player.parentElement) document.body.appendChild(player);
-            player.src = json.audioUrl;
-            player.play();
-        } else { throw new Error("AI TTS 返回無效"); }
-    } catch (e) {
-        console.warn("⚠️ AI 語音失效，切換備援:", e.message);
-        const u = new SpeechSynthesisUtterance(txt);
-        u.lang = 'en-US'; u.rate = 0.9;
-        window.speechSynthesis.speak(u);
+      <div class="mb-6 bg-gray-50 p-3 rounded-xl border border-gray-200">
+         <label class="block text-xs font-bold text-gray-500 uppercase mb-2">🗣️ 備援朗讀語音 (Fallback Voice)</label>
+         <select id="input-voice" class="w-full bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm outline-none"></select>
+      </div>
+
+      <div id="form-topic">
+        <input type="text" id="input-topic" class="w-full mb-4 px-4 py-3 border rounded-xl" placeholder="輸入主題 (例如: 旅遊)">
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <select id="input-scenario" class="px-3 py-3 border rounded-xl bg-white text-sm">
+            <option value="article">📘 短文</option>
+            <option value="conversation">💬 對話</option>
+            <option value="news">📰 新聞</option>
+          </select>
+          <select id="input-level" class="px-3 py-3 border rounded-xl bg-white text-sm">
+            <option value="elementary">初級</option>
+            <option value="high" selected>高中</option>
+            <option value="adult">專業</option>
+          </select>
+        </div>
+        <button onclick="submitTopic()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg">✨ 開始生成</button>
+      </div>
+
+      <div id="form-paste" class="hidden">
+        <input type="text" id="input-title" class="w-full mb-3 px-4 py-3 border rounded-xl" placeholder="文章標題">
+        <textarea id="input-content" rows="4" class="w-full mb-4 px-4 py-3 border rounded-xl" placeholder="貼上英文..."></textarea>
+        <button onclick="submitPaste()" class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl">🚀 開始分析</button>
+      </div>
+      <p id="loading-msg" class="hidden mt-6 text-center text-indigo-600 animate-pulse font-semibold">🤖 AI 正在撰寫中...</p>
+    </div>
+  </div>
+
+  <div id="view-cards" class="hidden w-full max-w-lg p-4 h-full flex-col justify-center">
+    <div class="flex justify-between items-center mb-4">
+      <button onclick="goBackToMenu()" class="bg-white px-3 py-1.5 rounded-lg text-sm shadow">🏠 首頁</button>
+      <span id="counter" class="text-indigo-600 font-bold">1 / 10</span>
+    </div>
+    <div class="relative w-full h-[60vh] perspective-1000 group cursor-pointer" onclick="flipCard(this)">
+      <div class="content-box relative w-full h-full transition-all duration-500 transform-style-3d shadow-2xl rounded-3xl">
+        <div class="absolute w-full h-full bg-white rounded-3xl p-8 flex flex-col backface-hidden border">
+          <div class="flex-grow flex items-center justify-center">
+            <h2 id="card-eng" class="text-2xl font-eng">...</h2>
+          </div>
+          <p class="text-center text-gray-300 text-xs uppercase animate-bounce">Tap to Flip</p>
+        </div>
+        <div class="absolute w-full h-full bg-slate-800 rounded-3xl p-8 flex flex-col backface-hidden rotate-y-180 text-white">
+          <div class="flex-grow overflow-y-auto">
+            <p id="card-chn" class="text-xl font-chn">...</p>
+          </div>
+          <button onclick="speakTarget(event)" class="mt-4 w-full bg-white/10 hover:bg-white/20 py-3 rounded-xl font-bold">🔊 朗讀 (AI)</button>
+        </div>
+      </div>
+    </div>
+    <div class="flex justify-between mt-6 gap-4">
+      <button onclick="prevCard()" class="flex-1 bg-white py-4 rounded-xl font-bold shadow">← 上一張</button>
+      <button onclick="nextCard()" class="flex-1 bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-lg">下一張 →</button>
+    </div>
+  </div>
+
+  <script>
+    // 🔥 重要：請確保這是您最新的 GAS 部署網址 (從您的截圖取得)
+    const API_URL = "https://script.google.com/macros/s/AKfycbzTciZ2Z7Xrmc8IrV-VHqmJMT6rdbnnIbnE1j6YYKDv3yC3Av0fvofThL6pBmvj_GP0MQ/exec";
+
+    let currentCards = [], currentIndex = 0;
+    let currentUserId = "";
+    let voices = [];
+
+    // --- 登入邏輯 ---
+    function handleLogin() {
+        const name = document.getElementById('login-username').value.trim();
+        if (!name) return alert("請輸入姓名");
+        currentUserId = name;
+        localStorage.setItem('gem_username', name);
+        document.getElementById('display-user').innerText = name;
+        document.getElementById('view-login').classList.add('hidden');
+        document.getElementById('view-input').classList.remove('hidden');
     }
-}
 
-// --- 🛠️ 重要：修正原本 ReferenceError 的呼叫點 ---
-function submitTopic() {
-    const t = document.getElementById('input-topic').value;
-    if(!t) return alert("請輸入主題");
-    // 修正：必須呼叫 startGen 而不是 handleTopicGeneration
-    startGen('generate', { 
-        topic: t, 
-        level: document.getElementById('input-level').value, 
-        len: 'medium', 
-        scenario: document.getElementById('input-scenario').value 
-    });
-}
+    // --- 核心 API 呼叫 ---
+    async function callApi(action, params) {
+        try {
+            const res = await fetch(API_URL, { method: "POST", body: JSON.stringify({ action, ...params }) });
+            const json = await res.json();
+            if (json.status === 'error') throw new Error(json.message);
+            return json;
+        } catch (e) { alert("API 錯誤: " + e.message); throw e; }
+    }
 
-function startGen(act, data) {
-    document.getElementById('loading-msg').classList.remove('hidden');
-    callApi(act, data).then(res => {
-        document.getElementById('loading-msg').classList.add('hidden');
-        currentCards = res.data.cards; currentIndex = 0;
-        currentArticleText = currentCards.map(c => c.english).join(' ');
-        currentArticleChinese = currentCards.map(c => c.chinese).join('<br><br>');
-        currentArticleTitle = res.data.title || 'Lesson';
+    // --- 修正：解決 ReferenceError 的關鍵部分 ---
+    function submitTopic() {
+        const t = document.getElementById('input-topic').value;
+        if(!t) return alert("請輸入主題");
         
-        document.getElementById('view-input').classList.add('hidden');
-        document.getElementById('view-cards').classList.remove('hidden');
-        document.getElementById('view-cards').classList.add('flex');
-        renderCard(); // 渲染第一張卡片
-    });
-}
+        // 🚨 修正點：這裡必須呼叫 startGen，不能呼叫 handleTopicGeneration
+        startGen('generate', { 
+            topic: t, 
+            level: document.getElementById('input-level').value, 
+            len: 'medium', 
+            scenario: document.getElementById('input-scenario').value 
+        });
+    }
+    
+    function submitPaste() {
+        const c = document.getElementById('input-content').value;
+        const t = document.getElementById('input-title').value;
+        if(!c) return alert("請貼上文章");
+        startGen('import', { title: t, content: c, len: 'medium' });
+    }
 
-function renderCard() {
-    const c = currentCards[currentIndex];
-    document.getElementById('card-eng').innerText = c.english;
-    document.getElementById('card-chn').innerText = c.chinese;
-    document.getElementById('counter').innerText = `${currentIndex+1} / ${currentCards.length}`;
-    document.querySelector('.content-box').parentElement.classList.remove('flipped');
-}
+    function startGen(act, data) {
+        document.getElementById('loading-msg').classList.remove('hidden');
+        callApi(act, data).then(res => {
+            document.getElementById('loading-msg').classList.add('hidden');
+            currentCards = res.data.cards; currentIndex = 0;
+            document.getElementById('view-input').classList.add('hidden');
+            document.getElementById('view-cards').classList.remove('hidden');
+            document.getElementById('view-cards').classList.add('flex');
+            renderCard();
+        });
+    }
 
-// ...其餘 callApi, handleLogin, nextCard, prevCard 函式請保留原狀...
+    function renderCard() {
+        const c = currentCards[currentIndex];
+        document.getElementById('card-eng').innerText = c.english;
+        document.getElementById('card-chn').innerText = c.chinese;
+        document.getElementById('counter').innerText = `${currentIndex+1} / ${currentCards.length}`;
+        document.querySelector('.content-box').parentElement.classList.remove('flipped');
+    }
+
+    // --- 語音朗讀 (AI 優先 + 備援) ---
+    async function speakTarget(e) {
+        e.stopPropagation();
+        const txt = currentCards[currentIndex].english;
+        
+        // 1. 停止舊聲音
+        window.speechSynthesis.cancel();
+        const oldAudio = document.getElementById('ai-audio-player');
+        if (oldAudio) oldAudio.pause();
+
+        try {
+             // 2. 請求 AI 嗓子
+            const res = await fetch(API_URL, { 
+                method: "POST", 
+                body: JSON.stringify({ action: 'tts', text: txt, version: 'A_Professional' }) 
+            });
+            const json = await res.json();
+            
+            if (json.status === 'success' && json.audioUrl) {
+                let player = document.getElementById('ai-audio-player');
+                if(!player) {
+                    player = document.createElement('audio');
+                    player.id = 'ai-audio-player';
+                    document.body.appendChild(player);
+                }
+                player.src = json.audioUrl;
+                player.play();
+            } else { throw new Error("TTS Failed"); }
+        } catch(err) {
+            console.warn("切換備援語音", err);
+            const u = new SpeechSynthesisUtterance(txt);
+            u.lang = 'en-US';
+            u.rate = 0.9;
+            const vIdx = document.getElementById('input-voice').value;
+            if (voices[vIdx]) u.voice = voices[vIdx];
+            window.speechSynthesis.speak(u);
+        }
+    }
+
+    // --- 其他 UI 控制 ---
+    function flipCard(el) { el.classList.toggle('flipped'); }
+    function nextCard() { if(currentIndex < currentCards.length-1){ currentIndex++; renderCard(); } }
+    function prevCard() { if(currentIndex > 0){ currentIndex--; renderCard(); } }
+    function goBackToMenu() {
+        document.getElementById('view-cards').classList.add('hidden');
+        document.getElementById('view-cards').classList.remove('flex');
+        document.getElementById('view-input').classList.remove('hidden');
+        window.speechSynthesis.cancel();
+        const p = document.getElementById('ai-audio-player'); if(p) p.pause();
+    }
+    function switchTab(mode) {
+        document.getElementById('form-topic').classList.toggle('hidden', mode!=='topic');
+        document.getElementById('form-paste').classList.toggle('hidden', mode!=='paste');
+        document.getElementById('tab-topic').className = mode==='topic'?'border-b-2 border-indigo-600 text-indigo-600 font-bold px-6 py-2':'text-gray-500 px-6 py-2';
+        document.getElementById('tab-paste').className = mode==='paste'?'border-b-2 border-indigo-600 text-indigo-600 font-bold px-6 py-2':'text-gray-500 px-6 py-2';
+    }
+    function handleLogout() { localStorage.removeItem('gem_username'); location.reload(); }
+    
+    // --- 初始化 ---
+    function loadVoices() {
+        voices = window.speechSynthesis.getVoices();
+        const select = document.getElementById('input-voice');
+        select.innerHTML = '';
+        voices.filter(v => v.lang.startsWith('en')).forEach((v, i) => {
+            const opt = document.createElement('option');
+            opt.value = voices.indexOf(v);
+            opt.text = v.name;
+            select.appendChild(opt);
+        });
+    }
+    
+    function init() {
+        const saved = localStorage.getItem('gem_username');
+        if (saved) {
+            currentUserId = saved;
+            document.getElementById('display-user').innerText = saved;
+            document.getElementById('view-login').classList.add('hidden');
+            document.getElementById('view-input').classList.remove('hidden');
+        }
+        loadVoices();
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    init();
+  </script>
+</body>
+</html>
