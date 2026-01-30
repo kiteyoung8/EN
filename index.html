@@ -28,6 +28,15 @@
         background-color: #e0e7ff; color: #4338ca; text-decoration: underline;
     }
     
+    /* 正在朗讀的句子高亮效果 */
+    .reading-highlight {
+        background-color: #fef3c7; /* 黃色底 */
+        color: #d97706;
+        padding: 2px 4px;
+        border-radius: 4px;
+        transition: all 0.3s;
+    }
+
     #word-popup {
         position: absolute; z-index: 50; background: white; border-radius: 12px;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
@@ -70,7 +79,7 @@
       </div>
 
       <div class="mb-6 bg-gray-50 p-3 rounded-xl border border-gray-200">
-         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">🗣️ 朗讀聲音 Voice (English Only)</label>
+         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">🗣️ 朗讀聲音 Voice (優先選取 Google/Microsoft Online)</label>
          <select id="input-voice" class="w-full bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm outline-none mb-3"></select>
          <div class="flex justify-between items-center mb-1">
              <label class="block text-xs font-bold text-gray-500 uppercase">⚡ 預設速度 Speed: <span id="speed-val" class="text-indigo-600 font-bold">1.0</span>x</label>
@@ -153,19 +162,14 @@
       </div>
       
       <div class="flex-grow overflow-y-auto custom-scroll relative pr-2">
-         
          <div id="english-area">
              <h3 id="review-title" class="text-2xl font-bold text-indigo-700 mb-4 font-eng clickable-word" onclick="speak(this.innerText)">Title</h3>
              <div id="review-content" class="prose text-gray-800 font-eng text-lg leading-loose mb-6"></div>
          </div>
-         
          <hr class="border-t-4 border-indigo-100 my-8 rounded-full">
-         
          <div id="chinese-area">
              <h3 class="text-sm font-bold text-gray-400 mb-3 font-chn bg-gray-100 inline-block px-2 py-1 rounded">💡 中文翻譯 (Reference)</h3>
-             <div id="review-content-chn" class="prose text-gray-500 font-chn text-base leading-relaxed">
-                 (翻譯載入中...)
-             </div>
+             <div id="review-content-chn" class="prose text-gray-500 font-chn text-base leading-relaxed">(翻譯載入中...)</div>
          </div>
 
          <div id="word-popup">
@@ -225,8 +229,9 @@
     let currentPopupData = null;
     let currentArticleText = "";
     let currentArticleChinese = "";
-    let currentArticleTitle = ""; // 存標題
+    let currentArticleTitle = "";
     let currentUserId = ""; 
+    let utteranceQueue = []; // 用於存放分段朗讀的句子
 
     function init() {
         const savedUser = localStorage.getItem('gem_username');
@@ -272,13 +277,16 @@
       select.innerHTML = '';
       const engVoices = voices.filter(v => v.lang.startsWith('en'));
       const listToShow = engVoices.length > 0 ? engVoices : voices;
+      
       listToShow.forEach((v) => {
           const option = document.createElement('option');
           option.value = voices.indexOf(v);
           option.text = `${v.name} (${v.lang})`;
           select.appendChild(option);
       });
+      // 優先選擇 Google 或 Microsoft 的 Online/Natural 聲音，這些通常較有韻律感
       let defaultIdx = voices.findIndex(v => v.name.includes('Google US English'));
+      if (defaultIdx === -1) defaultIdx = voices.findIndex(v => v.name.includes('Microsoft Aria'));
       if (defaultIdx === -1) defaultIdx = voices.findIndex(v => v.lang === 'en-US');
       if (defaultIdx !== -1) select.value = defaultIdx;
       else if (engVoices.length > 0) select.value = voices.indexOf(engVoices[0]);
@@ -288,8 +296,11 @@
     document.getElementById('input-rate').addEventListener('input', (e) => { document.getElementById('speed-val').innerText = e.target.value; });
     document.getElementById('input-rate-review').addEventListener('input', (e) => { document.getElementById('speed-val-review').innerText = e.target.value; });
 
+    // 單句/單字朗讀
     function speak(txt){ 
-        window.speechSynthesis.cancel(); 
+        // 非全文朗讀時，停止目前的播放
+        if(!isPlayingFull) window.speechSynthesis.cancel(); 
+        
         const u = new SpeechSynthesisUtterance(txt); 
         u.lang = 'en-US'; 
         let rate = 1;
@@ -336,11 +347,9 @@
     }
     function submitPaste() {
        const txt=document.getElementById('input-content').value; if(!txt)return alert("請貼上文章");
-       // 如果是貼上模式，title 來自 input，必須傳給後端鎖定
        const title = document.getElementById('input-title').value; 
        startGen('import', { title: title, content:txt, len:document.getElementById('input-len-paste').value });
     }
-
     function startGen(act, data) {
         document.getElementById('loading-msg').classList.remove('hidden');
         callApi(act, data).then(res => {
@@ -348,7 +357,7 @@
             currentCards = res.data.cards; currentIndex = 0;
             currentArticleText = currentCards.map(c => c.english).join(' ');
             currentArticleChinese = currentCards.map(c => c.chinese).join('<br><br>');
-            currentArticleTitle = res.data.title || 'Lesson'; // 使用後端回傳的標題 (已包含鎖定邏輯)
+            currentArticleTitle = res.data.title || 'Lesson'; 
             
             document.getElementById('card-main-title').innerText = currentArticleTitle;
             document.getElementById('view-input').classList.add('hidden');
@@ -392,11 +401,12 @@
             saveBtn.innerHTML = "💾 儲存 (Save)"; saveBtn.disabled = false; saveBtn.classList.remove('text-gray-400');
         }
 
-        // 🔥 設定標題
         document.getElementById('review-title').innerText = currentArticleTitle;
         
         const contentDiv = document.getElementById('review-content');
-        
+        // 分句斷詞以便高亮顯示
+        // 我們將純文字轉為句子陣列，再將每個句子轉為單字
+        // 為了簡單起見，這裡還是用純文字顯示，但為了互動我們包了 span
         const words = currentArticleText.split(/(\s+)/); 
         contentDiv.innerHTML = words.map(w => {
             if(w.trim().length === 0) return w; 
@@ -446,14 +456,11 @@
     function readArchivedArticle(title, contentEscaped, contentChnEscaped) {
         const content = unescape(contentEscaped);
         const contentChn = contentChnEscaped && contentChnEscaped !== 'undefined' ? unescape(contentChnEscaped) : "";
-        
         document.getElementById('view-library').classList.add('hidden');
         document.getElementById('view-library').classList.remove('flex');
-        
         currentArticleTitle = title;
         currentArticleText = content;
         currentArticleChinese = contentChn;
-        
         showReviewPage(true);
     }
     function delArticle(id, btn) {
@@ -461,11 +468,11 @@
     }
 
     async function handleWordClick(word, el) {
-        speak(word);
+        if(!isPlayingFull) speak(word); // 如果正在全文朗讀，點字不發音，避免干擾
         const popup = document.getElementById('word-popup');
         const rect = el.getBoundingClientRect();
+        const parentRect = document.getElementById('view-review').getBoundingClientRect();
         
-        const parentRect = document.getElementById('view-review').getBoundingClientRect(); // 確保相對於視窗
         let top = rect.top - parentRect.top - popup.offsetHeight - 10;
         if(top < 0) top = rect.bottom - parentRect.top + 10;
         popup.style.top = `${top}px`; popup.style.left = `${rect.left - parentRect.left}px`;
@@ -513,23 +520,53 @@
         }).then(() => { btn.innerText = "✓ 已儲存"; btn.classList.replace('bg-indigo-600','bg-green-500'); btn.disabled=true; });
     }
 
-    // 🔥 全文朗讀：只讀英文 (標題 + 內文)
+    // 🔥 全文朗讀：分段播放機制 (模擬真人節奏)
     function playFullArticle() {
         if(isPlayingFull){ stopFullAudio(); return; }
-        isPlayingFull=true; document.getElementById('btn-read-all').innerText='🛑 停止朗讀 (Stop)'; window.speechSynthesis.cancel();
+        isPlayingFull = true; 
+        document.getElementById('btn-read-all').innerText='🛑 停止朗讀 (Stop)'; 
+        window.speechSynthesis.cancel();
         
-        // 朗讀內容：標題 + 句點 + 內文
-        const textToRead = currentArticleTitle + ". " + currentArticleText;
+        // 1. 準備句子 (標題 + 內文)
+        const fullText = currentArticleTitle + ". " + currentArticleText;
+        // 2. 依照標點符號切分 (句點、問號、驚嘆號)，但保留符號
+        // Regex 說明: 切分 . ! ? 且包含後面的空格，Filter 去除空字串
+        const rawSentences = fullText.match(/[^.!?]+[.!?]+(\s|$)/g) || [fullText];
         
-        const u = new SpeechSynthesisUtterance(textToRead);
-        u.lang = 'en-US'; 
+        utteranceQueue = rawSentences;
+        playQueue(0);
+    }
+
+    function playQueue(index) {
+        if (!isPlayingFull || index >= utteranceQueue.length) {
+            stopFullAudio();
+            return;
+        }
+
+        const txt = utteranceQueue[index].trim();
+        if(!txt) { playQueue(index+1); return; }
+
+        const u = new SpeechSynthesisUtterance(txt);
+        u.lang = 'en-US';
         const rate = parseFloat(document.getElementById('input-rate-review').value) || 1;
         u.rate = rate;
         const v = voices[document.getElementById('input-voice').value]; if(v)u.voice=v;
-        u.onend = stopFullAudio;
+
+        u.onend = function() {
+            if(isPlayingFull) {
+                // 🔥 關鍵：每句唸完後，設定 300ms 的自然停頓，再唸下一句
+                setTimeout(() => { playQueue(index + 1); }, 300);
+            }
+        };
+        
         window.speechSynthesis.speak(u);
     }
-    function stopFullAudio(){ window.speechSynthesis.cancel(); isPlayingFull=false; document.getElementById('btn-read-all').innerText='🔊 全文朗讀 (英文)'; }
+
+    function stopFullAudio(){ 
+        window.speechSynthesis.cancel(); 
+        isPlayingFull=false; 
+        document.getElementById('btn-read-all').innerText='🔊 全文朗讀 (英文)'; 
+    }
 
     function openWordBank() { 
         document.getElementById('view-input').classList.add('hidden'); 
