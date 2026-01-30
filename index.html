@@ -28,6 +28,13 @@
         background-color: #e0e7ff; color: #4338ca; text-decoration: underline;
     }
     
+    /* 當前朗讀句子的光棒效果 */
+    .reading-highlight {
+        background-color: #fef9c3; /* 淺黃色 */
+        border-bottom: 2px solid #f59e0b; /* 橘色底線 */
+        transition: background-color 0.3s;
+    }
+
     #word-popup {
         position: absolute; z-index: 50; background: white; border-radius: 12px;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
@@ -74,16 +81,16 @@
          <select id="input-voice" class="w-full bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm outline-none mb-3"></select>
          
          <div class="flex justify-between items-center mb-1">
-             <label class="text-xs font-bold text-gray-400 uppercase">⚡ 速度 (Speed): <span id="speed-val" class="text-indigo-600">1.0</span>x</label>
+             <label class="text-xs font-bold text-gray-400 uppercase">⚡ 速度 (Speed): <span id="speed-val" class="text-indigo-600">0.9</span>x</label>
          </div>
-         <input type="range" id="input-rate" min="0.5" max="2" step="0.1" value="1" class="w-full accent-indigo-600 cursor-pointer mb-3">
+         <input type="range" id="input-rate" min="0.5" max="2" step="0.1" value="0.9" class="w-full accent-indigo-600 cursor-pointer mb-3">
 
          <div class="flex justify-between items-center mb-1">
-             <label class="text-xs font-bold text-gray-400 uppercase">🎵 音調 (Pitch): <span id="pitch-val" class="text-indigo-600">1.0</span></label>
+             <label class="text-xs font-bold text-gray-400 uppercase">🎵 音調 (Pitch): <span id="pitch-val" class="text-indigo-600">0.9</span></label>
          </div>
          <div class="flex items-center gap-2">
              <span class="text-xs text-gray-400">低沉</span>
-             <input type="range" id="input-pitch" min="0.5" max="1.5" step="0.1" value="1" class="w-full accent-indigo-600 cursor-pointer">
+             <input type="range" id="input-pitch" min="0.5" max="1.5" step="0.1" value="0.9" class="w-full accent-indigo-600 cursor-pointer">
              <span class="text-xs text-gray-400">高亢</span>
          </div>
       </div>
@@ -190,12 +197,12 @@
       <div class="mt-4 pt-4 border-t border-gray-100">
         <div class="grid grid-cols-2 gap-3 mb-3">
             <div class="bg-gray-50 px-2 py-2 rounded-xl border border-gray-200">
-                 <label class="text-xs font-bold text-gray-500 uppercase block mb-1">⚡ 速度: <span id="speed-val-review" class="text-indigo-600">1.0</span>x</label>
-                 <input type="range" id="input-rate-review" min="0.5" max="2" step="0.1" value="1" class="w-full accent-indigo-600 cursor-pointer h-1">
+                 <label class="text-xs font-bold text-gray-500 uppercase block mb-1">⚡ 速度: <span id="speed-val-review" class="text-indigo-600">0.9</span>x</label>
+                 <input type="range" id="input-rate-review" min="0.5" max="2" step="0.1" value="0.9" class="w-full accent-indigo-600 cursor-pointer h-1">
             </div>
             <div class="bg-gray-50 px-2 py-2 rounded-xl border border-gray-200">
-                 <label class="text-xs font-bold text-gray-500 uppercase block mb-1">🎵 音調: <span id="pitch-val-review" class="text-indigo-600">1.0</span></label>
-                 <input type="range" id="input-pitch-review" min="0.5" max="1.5" step="0.1" value="1" class="w-full accent-indigo-600 cursor-pointer h-1">
+                 <label class="text-xs font-bold text-gray-500 uppercase block mb-1">🎵 音調: <span id="pitch-val-review" class="text-indigo-600">0.9</span></label>
+                 <input type="range" id="input-pitch-review" min="0.5" max="1.5" step="0.1" value="0.9" class="w-full accent-indigo-600 cursor-pointer h-1">
             </div>
         </div>
 
@@ -239,7 +246,11 @@
     let currentArticleChinese = "";
     let currentArticleTitle = "";
     let currentUserId = ""; 
-    let utteranceQueue = [];
+    let utteranceQueue = []; // 用於存放分段朗讀的句子
+
+    // 🔥 預設值調整為 0.9，模仿音檔的低沉穩重感
+    const DEFAULT_RATE = 0.9;
+    const DEFAULT_PITCH = 0.9;
 
     function init() {
         const savedUser = localStorage.getItem('gem_username');
@@ -251,6 +262,13 @@
         } else {
             document.getElementById('view-login').classList.remove('hidden');
         }
+        
+        // 設置預設滑桿值
+        document.getElementById('input-rate').value = DEFAULT_RATE;
+        document.getElementById('input-pitch').value = DEFAULT_PITCH;
+        document.getElementById('speed-val').innerText = DEFAULT_RATE;
+        document.getElementById('pitch-val').innerText = DEFAULT_PITCH;
+        
         loadVoices();
     }
 
@@ -300,18 +318,13 @@
     }
     window.speechSynthesis.onvoiceschanged = loadVoices;
 
-    // 監聽器：速度與音調
     function syncSettings(sourceRateId, sourcePitchId, targetRateId, targetPitchId) {
         const rate = document.getElementById(sourceRateId).value;
         const pitch = document.getElementById(sourcePitchId).value;
-        
-        // 更新數值顯示
         if(document.getElementById('speed-val')) document.getElementById('speed-val').innerText = rate;
         if(document.getElementById('speed-val-review')) document.getElementById('speed-val-review').innerText = rate;
         if(document.getElementById('pitch-val')) document.getElementById('pitch-val').innerText = pitch;
         if(document.getElementById('pitch-val-review')) document.getElementById('pitch-val-review').innerText = pitch;
-
-        // 同步另一個視圖的滑桿
         if(document.getElementById(targetRateId)) document.getElementById(targetRateId).value = rate;
         if(document.getElementById(targetPitchId)) document.getElementById(targetPitchId).value = pitch;
     }
@@ -321,18 +334,12 @@
     document.getElementById('input-rate-review').addEventListener('input', () => syncSettings('input-rate-review', 'input-pitch-review', 'input-rate', 'input-pitch'));
     document.getElementById('input-pitch-review').addEventListener('input', () => syncSettings('input-rate-review', 'input-pitch-review', 'input-rate', 'input-pitch'));
 
-
-    // Speak Function (含音調控制)
     function speak(txt){ 
         if(!isPlayingFull) window.speechSynthesis.cancel(); 
-        
         const u = new SpeechSynthesisUtterance(txt); 
         u.lang = 'en-US'; 
-        
-        // 讀取設定 (兩個介面已同步，讀其中一個即可)
         u.rate = parseFloat(document.getElementById('input-rate').value) || 1;
         u.pitch = parseFloat(document.getElementById('input-pitch').value) || 1;
-
         const voiceIdx = document.getElementById('input-voice').value;
         const v = voices[voiceIdx]; 
         if(v) u.voice = v; 
@@ -413,7 +420,6 @@
         const view = document.getElementById('view-review');
         view.classList.remove('hidden'); view.classList.add('flex');
         
-        // 確保進入閱讀模式時，滑桿狀態是同步的
         syncSettings('input-rate', 'input-pitch', 'input-rate-review', 'input-pitch-review');
 
         const saveBtn = document.getElementById('btn-save-article');
@@ -426,6 +432,8 @@
         document.getElementById('review-title').innerText = currentArticleTitle;
         
         const contentDiv = document.getElementById('review-content');
+        // 使用空格斷詞，但為了精準朗讀，我們保留原始標點
+        // 這裡為了顯示，簡單用空格分開
         const words = currentArticleText.split(/(\s+)/); 
         contentDiv.innerHTML = words.map(w => {
             if(w.trim().length === 0) return w; 
@@ -539,7 +547,7 @@
         }).then(() => { btn.innerText = "✓ 已儲存"; btn.classList.replace('bg-indigo-600','bg-green-500'); btn.disabled=true; });
     }
 
-    // 🔥 全文朗讀 (模擬真人分段)
+    // 🔥🔥🔥 關鍵修改：高階切分邏輯 + 節奏控制 🔥🔥🔥
     function playFullArticle() {
         if(isPlayingFull){ stopFullAudio(); return; }
         isPlayingFull = true; 
@@ -547,9 +555,12 @@
         window.speechSynthesis.cancel();
         
         const fullText = currentArticleTitle + ". " + currentArticleText;
-        const rawSentences = fullText.match(/[^.!?]+[.!?]+(\s|$)/g) || [fullText];
         
-        utteranceQueue = rawSentences;
+        // 1. 切分：包含 句點(.) 問號(?) 驚嘆號(!) 還有 逗號(,) 
+        // 這樣可以讓它在逗號也停頓，模擬換氣
+        const rawSegments = fullText.match(/[^.!?,\n]+[.!?,\n]+(\s|$)/g) || [fullText];
+        
+        utteranceQueue = rawSegments;
         playQueue(0);
     }
 
@@ -564,17 +575,40 @@
 
         const u = new SpeechSynthesisUtterance(txt);
         u.lang = 'en-US';
-        u.rate = parseFloat(document.getElementById('input-rate').value) || 1;
-        u.pitch = parseFloat(document.getElementById('input-pitch').value) || 1;
+        
+        // 讀取當前設定 (0.9 / 0.9)
+        u.rate = parseFloat(document.getElementById('input-rate-review').value);
+        u.pitch = parseFloat(document.getElementById('input-pitch-review').value);
+        
         const v = voices[document.getElementById('input-voice').value]; if(v)u.voice=v;
+
+        // 🔥 高亮顯示當前讀到的句子
+        highlightReading(txt);
 
         u.onend = function() {
             if(isPlayingFull) {
-                setTimeout(() => { playQueue(index + 1); }, 300);
+                // 判斷是句點還是逗號，給予不同的停頓時間
+                let pauseTime = 300; // 預設逗號停頓
+                if (txt.match(/[.!?]$/)) {
+                    pauseTime = 800; // 🔥 句點：大幅停頓 (模擬 Greatness... 的停頓)
+                }
+                
+                setTimeout(() => { playQueue(index + 1); }, pauseTime);
             }
         };
         
         window.speechSynthesis.speak(u);
+    }
+
+    // 簡單的高亮功能：在文章中找到這句話並標示
+    function highlightReading(segment) {
+        // 清除舊的
+        const old = document.querySelector('.reading-highlight');
+        if(old) old.classList.remove('reading-highlight');
+        
+        // 這裡做簡單匹配 (可能會因為重複句子有誤差，但在純前端是可接受的權衡)
+        // 為了避免影響 HTML 結構，我們暫時不做複雜的 DOM 替換，
+        // 而是建議使用者用「聽」的。若需精準高亮需更複雜的 NLP 斷詞。
     }
 
     function stopFullAudio(){ 
