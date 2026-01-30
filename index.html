@@ -43,38 +43,38 @@
   <div id="view-login" class="fixed inset-0 bg-gray-900 bg-opacity-90 z-50 flex flex-col items-center justify-center p-6">
     <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
         <h1 class="text-2xl font-bold text-indigo-700 mb-6">👋 歡迎回來</h1>
-        <input type="text" id="login-username" class="w-full px-4 py-3 border border-gray-300 rounded-xl mb-4 text-center" placeholder="輸入您的姓名">
-        <button onclick="handleLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg">進入系統</button>
+        <input type="text" id="login-username" class="w-full px-4 py-3 border border-gray-300 rounded-xl mb-4 text-center text-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="輸入姓名 (例如: kiteyoung)">
+        <button onclick="handleLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition active:scale-95">進入系統</button>
     </div>
   </div>
 
   <div id="view-input" class="hidden w-full max-w-lg p-6">
     <div class="bg-white rounded-2xl shadow-xl p-8 relative">
       <div class="absolute top-4 right-4 flex gap-2">
-        <button onclick="openLibrary()" title="文章庫" class="text-xl">📂</button>
-        <button onclick="openWordBank()" title="生字本" class="text-xl">📚</button>
+        <button onclick="openLibrary()" title="文章庫" class="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full transition"><span class="text-xl">📂</span></button>
+        <button onclick="openWordBank()" title="生字本" class="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full transition"><span class="text-xl">📚</span></button>
       </div>
       <div class="absolute top-4 left-4 flex gap-2 items-center">
         <span id="display-user" class="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">Guest</span>
-        <button onclick="handleLogout()" class="text-xs text-red-400">登出</button>
+        <button onclick="handleLogout()" class="text-xs text-red-400 hover:underline">登出</button>
       </div>
 
-      <div class="flex justify-center mt-6 mb-6 border-b">
+      <div class="flex justify-center mt-6 mb-6 border-b border-gray-200">
         <button onclick="switchTab('topic')" id="tab-topic" class="border-b-2 border-indigo-600 text-indigo-600 font-bold px-6 py-2">✨ AI 生成</button>
         <button onclick="switchTab('paste')" id="tab-paste" class="text-gray-500 px-6 py-2">📋 貼上文章</button>
       </div>
 
-      <div class="mb-6 bg-gray-50 p-3 rounded-xl border">
-         <label class="block text-xs font-bold text-gray-400 uppercase mb-2">🗣️ 備援朗讀語音 (FALLBACK VOICE)</label>
-         <select id="input-voice" class="w-full bg-white border rounded-lg px-2 py-2 text-sm outline-none"></select>
+      <div class="mb-6 bg-gray-50 p-3 rounded-xl border border-gray-200">
+         <label class="block text-xs font-bold text-gray-500 uppercase mb-2">🗣️ 備援朗讀語音 (Fallback Voice)</label>
+         <select id="input-voice" class="w-full bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm outline-none"></select>
       </div>
 
       <div id="form-topic" class="block">
-        <input type="text" id="input-topic" class="w-full mb-4 px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" placeholder="主題 (e.g., 旅遊, AI)">
+        <input type="text" id="input-topic" class="w-full mb-4 px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" placeholder="主題 (例如: 旅遊, 生活...)">
         <div class="grid grid-cols-2 gap-4 mb-4">
           <select id="input-scenario" class="px-3 py-3 border rounded-xl bg-white text-sm text-indigo-700 font-semibold">
-            <option value="article">📘 短文</option>
-            <option value="conversation">💬 對話</option>
+            <option value="article">📘 短文 (Article)</option>
+            <option value="conversation">💬 對話 (Dialogue)</option>
             <option value="news">📰 新聞搜尋</option>
           </select>
           <select id="input-level" class="px-3 py-3 border rounded-xl bg-white text-sm">
@@ -89,14 +89,69 @@
       <div id="form-paste" class="hidden">
         <input type="text" id="input-title" class="w-full mb-3 px-4 py-3 border rounded-xl" placeholder="文章標題">
         <textarea id="input-content" rows="4" class="w-full mb-4 px-4 py-3 border rounded-xl" placeholder="貼上英文文章..."></textarea>
-        <button onclick="submitPaste()" class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl">🚀 開始分析</button>
+        <button onclick="submitPaste()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-xl shadow-lg">🚀 開始分析</button>
       </div>
-      <p id="loading-msg" class="hidden mt-6 text-center text-indigo-600 animate-pulse">🤖 AI 正在合成中 (這可能需要一點時間)...</p>
+      <p id="loading-msg" class="hidden mt-6 text-center text-indigo-600 animate-pulse font-semibold">🤖 AI 正在合成中 (AI is writing)...</p>
     </div>
   </div>
 
   <div id="view-cards" class="hidden w-full max-w-lg p-4 h-full flex-col justify-center">
+    <div class="flex justify-between items-center mb-4 px-2">
+      <button onclick="goBackToMenu()" class="bg-white px-3 py-1.5 rounded-lg shadow-sm text-sm font-bold text-gray-500 hover:text-indigo-600">🏠 首頁</button>
+      <span id="counter" class="text-indigo-600 font-bold font-mono">1 / 10</span>
     </div>
+    <div class="relative w-full h-[60vh] perspective-1000 group cursor-pointer" onclick="flipCard(this)">
+      <div class="content-box relative w-full h-full transition-all duration-500 transform-style-3d shadow-2xl rounded-3xl">
+        <div class="absolute w-full h-full bg-white rounded-3xl p-8 flex flex-col backface-hidden border border-gray-100">
+          <div class="flex-grow flex items-center justify-center">
+            <h2 id="card-eng" class="text-2xl leading-relaxed text-gray-800 font-eng text-left">...</h2>
+          </div>
+          <p class="text-center text-gray-300 text-xs uppercase animate-bounce">Tap to Flip</p>
+        </div>
+        <div class="absolute w-full h-full bg-slate-800 rounded-3xl p-8 flex flex-col backface-hidden rotate-y-180 text-white border border-slate-700">
+          <div class="flex-grow overflow-y-auto custom-scroll pt-4">
+            <p id="card-chn" class="text-xl leading-relaxed font-chn text-slate-100">...</p>
+          </div>
+          <div class="mt-4 flex gap-3 pt-4 border-t border-slate-600">
+            <button onclick="speakTarget(event)" class="flex-1 bg-white/10 hover:bg-white/20 py-3 rounded-xl font-bold">🔊 朗讀 (AI)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="flex justify-between mt-6 gap-4">
+      <button onclick="prevCard()" class="flex-1 bg-white text-gray-700 py-4 rounded-xl font-bold shadow hover:bg-gray-50 transition">← 上一張</button>
+      <button onclick="nextCard()" class="flex-1 bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition">下一張 →</button>
+    </div>
+  </div>
+
+  <div id="view-review" class="hidden w-full max-w-lg p-6 h-full flex-col justify-center">
+    <div class="bg-white rounded-3xl shadow-2xl p-6 h-[85vh] flex flex-col relative border border-gray-100">
+      <div class="flex justify-between items-center mb-4 border-b pb-4 border-gray-100">
+        <h2 class="text-xl font-bold text-gray-800">📖 全文閱讀</h2>
+        <button id="btn-save-article" onclick="saveCurrentArticle()" class="text-indigo-600 font-bold hover:bg-indigo-50 px-2 py-1 rounded">💾 儲存</button>
+      </div>
+      <div class="flex-grow overflow-y-auto custom-scroll pr-2 relative">
+        <h3 id="review-title" class="text-2xl font-bold text-indigo-700 mb-4 font-eng">Title</h3>
+        <div id="review-content" class="prose text-gray-800 font-eng text-lg leading-loose mb-6"></div>
+        <hr class="my-8 border-t-2 border-indigo-50">
+        <div id="review-content-chn" class="text-gray-500 font-chn text-base leading-relaxed"></div>
+
+        <div id="word-popup">
+            <div class="flex justify-between items-start">
+                <h4 id="popup-word" class="text-lg font-bold text-indigo-700">Word</h4>
+                <button onclick="closePopup()" class="text-gray-300 hover:text-gray-500">×</button>
+            </div>
+            <p id="popup-ipa" class="text-xs text-gray-400 font-mono mb-2">/ipa/</p>
+            <p id="popup-def" class="text-sm text-gray-700 font-chn leading-snug">Loading...</p>
+            <button id="btn-popup-save" onclick="savePopupWord()" class="mt-3 w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs py-1.5 rounded transition">+ 生字本</button>
+        </div>
+      </div>
+      <div class="mt-4 pt-4 border-t border-gray-100 flex gap-3">
+        <button id="btn-read-all" onclick="playFullArticle()" class="flex-1 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">🔊 全文朗讀 (AI)</button>
+        <button onclick="goBackToMenu()" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold">🏠 首頁</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     // 🔥 重要：請確保這是您最新的 GAS 部署網址
@@ -109,11 +164,14 @@
     // --- 🎙️ 核心：AI 嗓音 + 備援模式 ---
     async function speak(txt, version = 'A_Professional') {
         if (!txt) return;
+        
+        // 1. 停止舊音訊
         window.speechSynthesis.cancel();
         const oldAudio = document.getElementById('ai-audio-player');
         if (oldAudio) oldAudio.pause();
 
         try {
+            // 2. 向 GAS 請求 AI 嗓音
             const res = await fetch(API_URL, {
                 method: "POST",
                 body: JSON.stringify({ action: 'tts', text: txt, version: version })
@@ -126,22 +184,25 @@
                 if (!player.parentElement) document.body.appendChild(player);
                 player.src = json.audioUrl;
                 player.play();
+                console.log("🔊 正在播放 AI 克隆聲音...");
             } else { throw new Error("TTS Failed"); }
         } catch (e) {
-            console.warn("備援模式啟動", e.message);
+            console.warn("⚠️ AI 語音失效，切換備援:", e.message);
+            // 備援：瀏覽器內建聲音
             const u = new SpeechSynthesisUtterance(txt);
-            u.lang = 'en-US'; u.rate = 0.9;
+            u.lang = 'en-US';
+            u.rate = 0.9;
             const vIdx = document.getElementById('input-voice').value;
             if (voices[vIdx]) u.voice = voices[vIdx];
             window.speechSynthesis.speak(u);
         }
     }
 
-    // --- 🛠️ 修正重點：確保 submitTopic 呼叫 startGen ---
+    // --- 修正：修正 ReferenceError 報錯點 ---
     function submitTopic() {
         const t = document.getElementById('input-topic').value;
         if(!t) return alert("請輸入主題");
-        // 修正原本 handleTopicGeneration is not defined 的錯誤
+        // 修正原本呼叫錯誤的問題
         startGen('generate', { 
             topic: t, 
             level: document.getElementById('input-level').value, 
@@ -150,33 +211,161 @@
         });
     }
 
+    function submitPaste() {
+        const c = document.getElementById('input-content').value;
+        const t = document.getElementById('input-title').value;
+        if(!c) return alert("請貼上文章");
+        startGen('import', { title: t, content: c, len: 'medium' });
+    }
+
     function startGen(act, data) {
         document.getElementById('loading-msg').classList.remove('hidden');
         callApi(act, data).then(res => {
             document.getElementById('loading-msg').classList.add('hidden');
             currentCards = res.data.cards; currentIndex = 0;
             currentArticleText = currentCards.map(c => c.english).join(' ');
+            currentArticleChinese = currentCards.map(c => c.chinese).join('<br><br>');
             currentArticleTitle = res.data.title || 'New Lesson';
             
             document.getElementById('view-input').classList.add('hidden');
             document.getElementById('view-cards').classList.remove('hidden');
             document.getElementById('view-cards').classList.add('flex');
-            // renderCard(); // 需確保 renderCard 函式存在
+            renderCard();
         });
     }
 
+    // --- 核心組件：卡片渲染 ---
+    function renderCard() {
+        const c = currentCards[currentIndex];
+        document.getElementById('card-eng').innerText = c.english;
+        document.getElementById('card-chn').innerText = c.chinese;
+        document.getElementById('counter').innerText = `${currentIndex+1} / ${currentCards.length}`;
+        document.querySelector('.content-box').parentElement.classList.remove('flipped');
+    }
+
+    function flipCard(el) { el.classList.toggle('flipped'); }
+    function nextCard() { if(currentIndex < currentCards.length-1){ currentIndex++; renderCard(); } else { showReviewPage(); } }
+    function prevCard() { if(currentIndex > 0){ currentIndex--; renderCard(); } }
+    function speakTarget(e) { e.stopPropagation(); speak(currentCards[currentIndex].english); }
+
+    // --- 核心組件：全文閱讀 ---
+    function showReviewPage() {
+        document.getElementById('view-cards').classList.add('hidden');
+        document.getElementById('view-cards').classList.remove('flex');
+        document.getElementById('view-review').classList.remove('hidden');
+        document.getElementById('view-review').classList.add('flex');
+        document.getElementById('review-title').innerText = currentArticleTitle;
+        const contentDiv = document.getElementById('review-content');
+        contentDiv.innerHTML = currentArticleText.split(/(\s+)/).map(w => {
+            if(w.trim().length === 0) return w;
+            const raw = w.replace(/[^\w']/g, "");
+            return `<span class="clickable-word" onclick="handleWordClick('${raw}', this)">${w}</span>`;
+        }).join('');
+        document.getElementById('review-content-chn').innerHTML = currentArticleChinese;
+    }
+
+    async function handleWordClick(word, el) {
+        if(!isPlayingFull) speak(word);
+        const popup = document.getElementById('word-popup');
+        const rect = el.getBoundingClientRect();
+        popup.style.top = `${rect.top + window.scrollY - 80}px`;
+        popup.style.left = `${rect.left}px`;
+        popup.style.display = 'block';
+        document.getElementById('popup-word').innerText = word;
+        document.getElementById('popup-def').innerText = "Translating...";
+        
+        callApi('translate', { word: word, context: currentArticleText.substring(0, 200) }).then(res => {
+            document.getElementById('popup-ipa').innerText = res.data.ipa;
+            document.getElementById('popup-def').innerText = res.data.def;
+            window.currentWordData = res.data;
+        });
+    }
+
+    function closePopup() { document.getElementById('word-popup').style.display = 'none'; }
+    function savePopupWord() {
+        if(!window.currentWordData) return;
+        callApi('saveVocab', { userId: currentUserId, ...window.currentWordData, ctx: currentArticleText.substring(0, 100) }).then(() => {
+            alert("已加入生字本");
+            closePopup();
+        });
+    }
+
+    function playFullArticle() {
+        if(isPlayingFull){ 
+            window.speechSynthesis.cancel();
+            const p = document.getElementById('ai-audio-player');
+            if(p) p.pause();
+            isPlayingFull = false;
+            document.getElementById('btn-read-all').innerText = '🔊 全文朗讀 (AI)';
+            return; 
+        }
+        isPlayingFull = true; 
+        document.getElementById('btn-read-all').innerText = '🛑 停止朗讀'; 
+        speak(currentArticleTitle + ". " + currentArticleText, 'B_Philosophical');
+    }
+
+    // --- 工具函式 ---
     async function callApi(action, params) {
         try {
             const res = await fetch(API_URL, { method: "POST", body: JSON.stringify({ action, ...params }) });
             const json = await res.json();
             if (json.status === 'error') throw new Error(json.message);
             return json;
-        } catch (e) { alert(e.message); throw e; }
+        } catch (e) { alert("API Error: " + e.message); throw e; }
     }
 
-    // 初始化與其他輔助函式 (省略) ...
-    function init() { /* 同前 */ }
-    window.onload = init;
+    function switchTab(mode) {
+        document.getElementById('form-topic').classList.toggle('hidden', mode!=='topic');
+        document.getElementById('form-paste').classList.toggle('hidden', mode!=='paste');
+        document.getElementById('tab-topic').className = mode==='topic'?'border-b-2 border-indigo-600 text-indigo-600 font-bold px-6 py-2':'text-gray-500 px-6 py-2';
+        document.getElementById('tab-paste').className = mode==='paste'?'border-b-2 border-indigo-600 text-indigo-600 font-bold px-6 py-2':'text-gray-500 px-6 py-2';
+    }
+
+    function handleLogin() {
+        const nameInput = document.getElementById('login-username').value.trim();
+        if (!nameInput) return alert("請輸入姓名");
+        currentUserId = nameInput;
+        localStorage.setItem('gem_username', currentUserId);
+        document.getElementById('display-user').innerText = currentUserId;
+        document.getElementById('view-login').classList.add('hidden');
+        document.getElementById('view-input').classList.remove('hidden');
+    }
+
+    function handleLogout() { localStorage.removeItem('gem_username'); location.reload(); }
+
+    function goBackToMenu() {
+        isPlayingFull = false;
+        window.speechSynthesis.cancel();
+        const p = document.getElementById('ai-audio-player'); if(p) p.pause();
+        document.querySelectorAll('.flex-col').forEach(el => { if(el.id !== 'view-login') el.classList.add('hidden'); });
+        document.getElementById('view-input').classList.remove('hidden');
+    }
+
+    function loadVoices() {
+        voices = window.speechSynthesis.getVoices();
+        const select = document.getElementById('input-voice');
+        select.innerHTML = '';
+        voices.filter(v => v.lang.startsWith('en')).forEach((v, i) => {
+            const opt = document.createElement('option');
+            opt.value = voices.indexOf(v);
+            opt.text = v.name;
+            select.appendChild(opt);
+        });
+    }
+
+    function init() {
+        const saved = localStorage.getItem('gem_username');
+        if (saved) {
+            currentUserId = saved;
+            document.getElementById('display-user').innerText = currentUserId;
+            document.getElementById('view-login').classList.add('hidden');
+            document.getElementById('view-input').classList.remove('hidden');
+        }
+        loadVoices();
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    init();
   </script>
 </body>
 </html>
