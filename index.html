@@ -1,8 +1,45 @@
-// 🔥 修正 ReferenceError 的關鍵函式
+// 🔥 前端 API 地址 (請確保填入最新的部署網址)
+const API_URL = "https://script.google.com/macros/s/AKfycbzTciZ2Z7Xrmc8IrV-VHqmJMT6rdbnnIbnE1j6YYKDv3yC3Av0fvofThL6pBmvj_GP0MQ/exec";
+
+let currentCards = [], currentIndex = 0, isPlayingFull = false;
+let currentArticleText = "", currentArticleChinese = "", currentArticleTitle = "";
+let currentUserId = "", voices = [];
+
+// --- 🎙️ 語音合成：AI 優先 + 瀏覽器備援 ---
+async function speak(txt, version = 'A_Professional') {
+    if (!txt) return;
+    window.speechSynthesis.cancel();
+    const oldAudio = document.getElementById('ai-audio-player');
+    if (oldAudio) oldAudio.pause();
+
+    try {
+        // 請求 AI 嗓子網址
+        const res = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: 'tts', text: txt, version: version })
+        });
+        const json = await res.json();
+
+        if (json.status === 'success' && json.audioUrl) {
+            let player = document.getElementById('ai-audio-player') || document.createElement('audio');
+            player.id = 'ai-audio-player';
+            if (!player.parentElement) document.body.appendChild(player);
+            player.src = json.audioUrl;
+            player.play();
+        } else { throw new Error("AI TTS 返回無效"); }
+    } catch (e) {
+        console.warn("⚠️ AI 語音失效，切換備援:", e.message);
+        const u = new SpeechSynthesisUtterance(txt);
+        u.lang = 'en-US'; u.rate = 0.9;
+        window.speechSynthesis.speak(u);
+    }
+}
+
+// --- 🛠️ 重要：修正原本 ReferenceError 的呼叫點 ---
 function submitTopic() {
     const t = document.getElementById('input-topic').value;
     if(!t) return alert("請輸入主題");
-    // 確保呼叫 startGen 而不是 handleTopicGeneration
+    // 修正：必須呼叫 startGen 而不是 handleTopicGeneration
     startGen('generate', { 
         topic: t, 
         level: document.getElementById('input-level').value, 
@@ -17,39 +54,22 @@ function startGen(act, data) {
         document.getElementById('loading-msg').classList.add('hidden');
         currentCards = res.data.cards; currentIndex = 0;
         currentArticleText = currentCards.map(c => c.english).join(' ');
-        currentArticleTitle = res.data.title || 'New Lesson';
+        currentArticleChinese = currentCards.map(c => c.chinese).join('<br><br>');
+        currentArticleTitle = res.data.title || 'Lesson';
         
         document.getElementById('view-input').classList.add('hidden');
         document.getElementById('view-cards').classList.remove('hidden');
         document.getElementById('view-cards').classList.add('flex');
-        renderCard();
+        renderCard(); // 渲染第一張卡片
     });
 }
 
-// 🎙️ 核心：AI 嗓音與備援模式 (對接新的 API)
-async function speak(txt, version = 'A_Professional') {
-    if (!txt) return;
-    window.speechSynthesis.cancel();
-    const oldAudio = document.getElementById('ai-audio-player');
-    if (oldAudio) oldAudio.pause();
-
-    try {
-        const res = await fetch(API_URL, {
-            method: "POST",
-            body: JSON.stringify({ action: 'tts', text: txt, version: version })
-        });
-        const json = await res.json();
-        if (json.status === 'success' && json.audioUrl) {
-            let player = document.getElementById('ai-audio-player') || document.createElement('audio');
-            player.id = 'ai-audio-player';
-            if (!player.parentElement) document.body.appendChild(player);
-            player.src = json.audioUrl;
-            player.play();
-        } else { throw new Error("TTS Failed"); }
-    } catch (e) {
-        console.warn("備援模式啟動", e.message);
-        const u = new SpeechSynthesisUtterance(txt);
-        u.lang = 'en-US'; u.rate = 0.9;
-        window.speechSynthesis.speak(u);
-    }
+function renderCard() {
+    const c = currentCards[currentIndex];
+    document.getElementById('card-eng').innerText = c.english;
+    document.getElementById('card-chn').innerText = c.chinese;
+    document.getElementById('counter').innerText = `${currentIndex+1} / ${currentCards.length}`;
+    document.querySelector('.content-box').parentElement.classList.remove('flipped');
 }
+
+// ...其餘 callApi, handleLogin, nextCard, prevCard 函式請保留原狀...
