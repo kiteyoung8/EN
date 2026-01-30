@@ -1,75 +1,62 @@
-// 🔥 前端 API 地址 (請確保填入最新的部署網址)
-const API_URL = "https://script.google.com/macros/s/AKfycbzTciZ2Z7Xrmc8IrV-VHqmJMT6rdbnnIbnE1j6YYKDv3yC3Av0fvofThL6pBmvj_GP0MQ/exec";
+/**
+ * Main.gs - 終極修復整合版
+ */
+const CONFIG = {
+  API_KEY: 'AIzaSyASUkyl5TP2kxKqkZFVY6qlHWfjro023OY', // 你的 Gemini API Key
+  SHEET_NAME: 'WordBank',
+  SHEET_ARTICLES: 'ArticleBank',
+  // 修正：必須使用 raw 原始連結，AI 才能下載
+  REF_AUDIO_URL: "https://raw.githubusercontent.com/kiteyoung8/my-voice-assets/main/01%E6%B0%91%E8%88%AA%E6%92%AD%E9%9F%B3%E7%A8%BF%EF%BC%88%E4%B8%8B%EF%BC%89%EF%BC%88%E5%B8%B8%E9%80%9F%E6%9C%97%E8%AF%BB%EF%BC%89.mp3",
+  // 修正：更換為目前穩定運行的 Space 接口
+  TTS_API_URL: "https://hasanbasbunar-voice-cloning-xtts-v2.hf.space/api/predict"
+};
 
-let currentCards = [], currentIndex = 0, isPlayingFull = false;
-let currentArticleText = "", currentArticleChinese = "", currentArticleTitle = "";
-let currentUserId = "", voices = [];
-
-// --- 🎙️ 語音合成：AI 優先 + 瀏覽器備援 ---
-async function speak(txt, version = 'A_Professional') {
-    if (!txt) return;
-    window.speechSynthesis.cancel();
-    const oldAudio = document.getElementById('ai-audio-player');
-    if (oldAudio) oldAudio.pause();
-
-    try {
-        // 請求 AI 嗓子網址
-        const res = await fetch(API_URL, {
-            method: "POST",
-            body: JSON.stringify({ action: 'tts', text: txt, version: version })
-        });
-        const json = await res.json();
-
-        if (json.status === 'success' && json.audioUrl) {
-            let player = document.getElementById('ai-audio-player') || document.createElement('audio');
-            player.id = 'ai-audio-player';
-            if (!player.parentElement) document.body.appendChild(player);
-            player.src = json.audioUrl;
-            player.play();
-        } else { throw new Error("AI TTS 返回無效"); }
-    } catch (e) {
-        console.warn("⚠️ AI 語音失效，切換備援:", e.message);
-        const u = new SpeechSynthesisUtterance(txt);
-        u.lang = 'en-US'; u.rate = 0.9;
-        window.speechSynthesis.speak(u);
+function doPost(e) {
+  const output = ContentService.createTextOutput();
+  try {
+    const params = JSON.parse(e.postData.contents);
+    let result = {};
+    switch (params.action) {
+      case 'generate': result = handleTopicGeneration(params.topic, params.level, params.len, params.scenario); break;
+      case 'tts': result = handleTTS(params.text, params.version); break;
+      case 'translate': result = handleWordTranslation(params.word, params.context); break;
+      case 'getVocab': result = getVocabularyList(params.userId); break;
+      case 'saveVocab': result = saveVocabulary(params.userId, params.word, params.ipa, params.def, params.ctx, params.ctxChn); break;
+      case 'delVocab': result = deleteVocabulary(params.userId, params.id); break;
+      case 'saveArticle': result = saveArticle(params.userId, params.title, params.content, params.contentChn); break;
+      case 'getArticles': result = getArticleList(params.userId); break;
+      case 'delArticle': result = deleteArticle(params.userId, params.id); break;
+      default: result = { status: 'error', message: '未知操作' };
     }
+    output.setContent(JSON.stringify(result));
+  } catch (err) {
+    output.setContent(JSON.stringify({ status: 'error', message: err.toString() }));
+  }
+  return output.setMimeType(ContentService.MimeType.JSON);
 }
 
-// --- 🛠️ 重要：修正原本 ReferenceError 的呼叫點 ---
-function submitTopic() {
-    const t = document.getElementById('input-topic').value;
-    if(!t) return alert("請輸入主題");
-    // 修正：必須呼叫 startGen 而不是 handleTopicGeneration
-    startGen('generate', { 
-        topic: t, 
-        level: document.getElementById('input-level').value, 
-        len: 'medium', 
-        scenario: document.getElementById('input-scenario').value 
-    });
+// 🎙️ 語音合成：對接新接口格式
+function handleTTS(text, version) {
+  let processedText = text;
+  if (version === 'B_Philosophical') processedText = text.replace(/\. /g, "... ");
+  const payload = { "data": [processedText, "en", CONFIG.REF_AUDIO_URL, null, false, "Stay on topic", "Neutral", false] };
+  const options = { "method": "post", "contentType": "application/json", "payload": JSON.stringify(payload), "muteHttpExceptions": true };
+  const res = UrlFetchApp.fetch(CONFIG.TTS_API_URL, options);
+  const json = JSON.parse(res.getContentText());
+  if (json.data && json.data[0]) return { status: 'success', audioUrl: json.data[0].url };
+  throw new Error("AI 嗓子暫不可用，請確認 Space 是否運行中");
 }
 
-function startGen(act, data) {
-    document.getElementById('loading-msg').classList.remove('hidden');
-    callApi(act, data).then(res => {
-        document.getElementById('loading-msg').classList.add('hidden');
-        currentCards = res.data.cards; currentIndex = 0;
-        currentArticleText = currentCards.map(c => c.english).join(' ');
-        currentArticleChinese = currentCards.map(c => c.chinese).join('<br><br>');
-        currentArticleTitle = res.data.title || 'Lesson';
-        
-        document.getElementById('view-input').classList.add('hidden');
-        document.getElementById('view-cards').classList.remove('hidden');
-        document.getElementById('view-cards').classList.add('flex');
-        renderCard(); // 渲染第一張卡片
-    });
+// 🧠 AI 生成：使用穩定模型
+function callGemini(prompt, useSearch) {
+  const model = "gemini-1.5-flash"; 
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${CONFIG.API_KEY}`;
+  const payload = { contents: [{ parts: [{ text: prompt }] }] };
+  const res = UrlFetchApp.fetch(url, { method: "post", contentType: "application/json", payload: JSON.stringify(payload) });
+  const json = JSON.parse(res.getContentText());
+  const txt = json.candidates[0].content.parts[0].text;
+  const jsonMatch = txt.match(/\{[\s\S]*\}/);
+  return JSON.parse(jsonMatch[0]);
 }
 
-function renderCard() {
-    const c = currentCards[currentIndex];
-    document.getElementById('card-eng').innerText = c.english;
-    document.getElementById('card-chn').innerText = c.chinese;
-    document.getElementById('counter').innerText = `${currentIndex+1} / ${currentCards.length}`;
-    document.querySelector('.content-box').parentElement.classList.remove('flipped');
-}
-
-// ...其餘 callApi, handleLogin, nextCard, prevCard 函式請保留原狀...
+// (其餘資料庫函式請保留原本 code)
