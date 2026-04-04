@@ -127,12 +127,19 @@
       <!-- 2. Form: Speak Mode -->
       <div id="form-speak" class="hidden">
         <p class="text-sm text-gray-600 mb-4 text-center">選擇一個情境，和 AI 老師進行英文對話吧！老師會即時糾正你的文法喔。</p>
-        <select id="input-speak-scenario" class="w-full mb-6 px-4 py-4 border-2 border-indigo-100 rounded-xl bg-white text-base text-indigo-800 font-bold outline-none focus:border-indigo-500 shadow-sm cursor-pointer">
+        
+        <!-- 🌟 加入自訂情境選單切換 -->
+        <select id="input-speak-scenario" onchange="toggleCustomScenario()" class="w-full mb-4 px-4 py-4 border-2 border-indigo-100 rounded-xl bg-white text-base text-indigo-800 font-bold outline-none focus:border-indigo-500 shadow-sm cursor-pointer">
             <option value="Casual conversation at a cafe">☕ 咖啡廳閒聊 (Cafe Chat)</option>
             <option value="Passing immigration and customs at the airport">🛂 機場海關 (Customs)</option>
             <option value="Ordering food at a fast food restaurant">🍔 餐廳點餐 (Ordering Food)</option>
             <option value="Job Interview for a software engineer">💼 軟體工程師面試 (Job Interview)</option>
+            <option value="custom">✍️ 自訂情境 (Custom Scenario)</option>
         </select>
+        
+        <!-- 🌟 自訂情境文字框 (預設隱藏) -->
+        <input type="text" id="input-custom-scenario" class="hidden w-full mb-6 px-4 py-3 border-2 border-indigo-100 rounded-xl outline-none focus:border-indigo-500 shadow-sm transition-all" placeholder="請輸入英文情境 (例如: Checking in at a hotel)">
+
         <button onclick="initSpeakMode()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition">🎙️ 開始對話 (Start Conversation)</button>
       </div>
 
@@ -401,6 +408,19 @@
     // ==========================================
     // 🗣️ Speak Mode (口說對話模式核心)
     // ==========================================
+    
+    // 🌟 新增：處理下拉選單變更，顯示或隱藏自訂情境輸入框
+    function toggleCustomScenario() {
+        const select = document.getElementById('input-speak-scenario');
+        const customInput = document.getElementById('input-custom-scenario');
+        if (select.value === 'custom') {
+            customInput.classList.remove('hidden');
+            customInput.focus(); // 自動將游標移入
+        } else {
+            customInput.classList.add('hidden');
+        }
+    }
+
     function initSpeechRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
@@ -440,8 +460,20 @@
         if(!chatRecognition) return alert("您的瀏覽器不支援語音功能，請使用 Chrome 或 Safari。");
         
         const scenarioSelect = document.getElementById('input-speak-scenario');
-        currentSpeakScenario = scenarioSelect.value;
-        document.getElementById('speak-scenario-title').innerText = scenarioSelect.options[scenarioSelect.selectedIndex].text.split(' ')[0]; // 取 Emoji + 簡稱
+        let displayTitle = "";
+        
+        // 🌟 判斷是否為自訂情境
+        if (scenarioSelect.value === 'custom') {
+            const customVal = document.getElementById('input-custom-scenario').value.trim();
+            if (!customVal) return alert("請輸入自訂的英文情境！\n例如: Checking in at a hotel");
+            currentSpeakScenario = customVal;
+            displayTitle = "✍️ 自訂情境";
+        } else {
+            currentSpeakScenario = scenarioSelect.value;
+            displayTitle = scenarioSelect.options[scenarioSelect.selectedIndex].text.split(' ')[0]; // 取 Emoji + 簡稱
+        }
+        
+        document.getElementById('speak-scenario-title').innerText = displayTitle;
         
         chatHistoryText = "";
         document.getElementById('chat-history').innerHTML = "";
