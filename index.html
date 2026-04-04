@@ -44,7 +44,7 @@
         width: 12px; height: 12px; background: white; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;
     }
 
-    /* 🎤 新增：麥克風錄音時的脈衝動畫 */
+    /* 🎤 麥克風錄音時的脈衝動畫 */
     @keyframes pulse-ring {
         0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
         70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(99, 102, 241, 0); }
@@ -77,7 +77,7 @@
         <button onclick="handleLogout()" class="text-xs text-red-400 hover:underline">登出</button>
       </div>
 
-      <!-- Tabs (加入口說模式) -->
+      <!-- Tabs -->
       <div class="flex justify-center mt-6 mb-6 border-b border-gray-200">
         <button onclick="switchTab('topic')" id="tab-topic" class="border-b-2 border-indigo-600 text-indigo-600 font-bold px-3 py-2 text-sm transition">✨ 生成</button>
         <button onclick="switchTab('speak')" id="tab-speak" class="text-gray-500 px-3 py-2 text-sm transition">🗣️ 口說</button>
@@ -126,9 +126,8 @@
 
       <!-- 2. Form: Speak Mode -->
       <div id="form-speak" class="hidden">
-        <p class="text-sm text-gray-600 mb-4 text-center">選擇一個情境，和 AI 老師進行英文對話吧！老師會即時糾正你的文法喔。</p>
+        <p class="text-sm text-gray-600 mb-4 text-center">選擇一個情境，AI 將扮演對應角色與您互動！</p>
         
-        <!-- 🌟 加入自訂情境選單切換 -->
         <select id="input-speak-scenario" onchange="toggleCustomScenario()" class="w-full mb-4 px-4 py-4 border-2 border-indigo-100 rounded-xl bg-white text-base text-indigo-800 font-bold outline-none focus:border-indigo-500 shadow-sm cursor-pointer">
             <option value="Casual conversation at a cafe">☕ 咖啡廳閒聊 (Cafe Chat)</option>
             <option value="Passing immigration and customs at the airport">🛂 機場海關 (Customs)</option>
@@ -137,7 +136,6 @@
             <option value="custom">✍️ 自訂情境 (Custom Scenario)</option>
         </select>
         
-        <!-- 🌟 自訂情境文字框 (預設隱藏) -->
         <input type="text" id="input-custom-scenario" class="hidden w-full mb-6 px-4 py-3 border-2 border-indigo-100 rounded-xl outline-none focus:border-indigo-500 shadow-sm transition-all" placeholder="請輸入英文情境 (例如: Checking in at a hotel)">
 
         <button onclick="initSpeakMode()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition">🎙️ 開始對話 (Start Conversation)</button>
@@ -178,14 +176,22 @@
          </div>
 
          <!-- Bottom Mic Control Area -->
-         <div class="px-6 py-4 bg-white flex flex-col justify-center items-center border-t border-gray-100">
+         <div class="px-6 py-4 bg-white flex flex-col justify-center items-center border-t border-gray-100 relative">
             <p id="chat-status" class="text-xs text-gray-500 font-bold mb-3 uppercase tracking-wider">點擊麥克風開始說話</p>
-            <button id="btn-chat-mic" onclick="toggleChatMic()" class="w-16 h-16 bg-indigo-600 hover:bg-indigo-700 rounded-full flex items-center justify-center text-3xl text-white shadow-xl transition-all">🎤</button>
+            <div class="flex items-center gap-6">
+                <!-- 💡 新增：求救按鈕 -->
+                <button onclick="requestHint()" class="w-12 h-12 bg-yellow-50 border border-yellow-200 hover:bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-xl shadow-sm transition transform active:scale-95" title="不知道怎麼說？點我求救">💡</button>
+                
+                <button id="btn-chat-mic" onclick="toggleChatMic()" class="w-16 h-16 bg-indigo-600 hover:bg-indigo-700 rounded-full flex items-center justify-center text-3xl text-white shadow-xl transition-all">🎤</button>
+                
+                <!-- 佔位符以保持置中對齊 -->
+                <div class="w-12 h-12"></div>
+            </div>
          </div>
      </div>
   </div>
 
-  <!-- View: Flashcards (Keep unchanged) -->
+  <!-- View: Flashcards -->
   <div id="view-cards" class="hidden w-full max-w-lg p-4 h-full flex-col justify-center">
     <div class="flex justify-between items-center mb-4 px-2">
       <button onclick="goBackToMenu()" class="text-gray-500 hover:text-indigo-600 font-bold text-sm bg-white px-3 py-1.5 rounded-lg shadow-sm">🏠 首頁 (Home)</button>
@@ -261,7 +267,7 @@
     </div>
   </div>
 
-  <!-- View: Wordbank & Library (Omitted interior for brevity, logic remains identical) -->
+  <!-- View: Wordbank & Library -->
   <div id="view-wordbank" class="hidden w-full max-w-lg p-6 h-full flex-col justify-center">
     <div class="bg-white rounded-3xl shadow-2xl p-6 h-[80vh] flex flex-col border border-gray-100">
       <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
@@ -409,13 +415,12 @@
     // 🗣️ Speak Mode (口說對話模式核心)
     // ==========================================
     
-    // 🌟 新增：處理下拉選單變更，顯示或隱藏自訂情境輸入框
     function toggleCustomScenario() {
         const select = document.getElementById('input-speak-scenario');
         const customInput = document.getElementById('input-custom-scenario');
         if (select.value === 'custom') {
             customInput.classList.remove('hidden');
-            customInput.focus(); // 自動將游標移入
+            customInput.focus(); 
         } else {
             customInput.classList.add('hidden');
         }
@@ -456,22 +461,25 @@
         }
     }
 
-    function initSpeakMode() {
+    async function initSpeakMode() {
         if(!chatRecognition) return alert("您的瀏覽器不支援語音功能，請使用 Chrome 或 Safari。");
         
         const scenarioSelect = document.getElementById('input-speak-scenario');
         let displayTitle = "";
+        let baseScenario = "";
         
-        // 🌟 判斷是否為自訂情境
         if (scenarioSelect.value === 'custom') {
             const customVal = document.getElementById('input-custom-scenario').value.trim();
             if (!customVal) return alert("請輸入自訂的英文情境！\n例如: Checking in at a hotel");
-            currentSpeakScenario = customVal;
+            baseScenario = customVal;
             displayTitle = "✍️ 自訂情境";
         } else {
-            currentSpeakScenario = scenarioSelect.value;
-            displayTitle = scenarioSelect.options[scenarioSelect.selectedIndex].text.split(' ')[0]; // 取 Emoji + 簡稱
+            baseScenario = scenarioSelect.value;
+            displayTitle = scenarioSelect.options[scenarioSelect.selectedIndex].text.split(' ')[0];
         }
+        
+        // 🌟 強化 Prompt：透過前端組合出強大的隱藏指令，告訴 AI 必須「扮演角色」並「引導使用者」
+        currentSpeakScenario = `Roleplay Scenario: [${baseScenario}]. You MUST act as the other person in this scenario (e.g., the barista, the customs officer, the interviewer, the friend). Fully immerse in your character. If the user makes a mistake, gently correct them in your feedback. If the user asks for help or doesn't know what to say, provide 2-3 examples of what they could say next.`;
         
         document.getElementById('speak-scenario-title').innerText = displayTitle;
         
@@ -486,18 +494,36 @@
         document.getElementById('view-speak').classList.remove('hidden');
         document.getElementById('view-speak').classList.add('flex');
 
-        // AI 的第一句話
-        const greeting = "Hello! Let's start. Whenever you are ready, press the mic and speak to me.";
-        appendChatMessage('ai', greeting, "你好！我們開始吧。準備好的時候按麥克風跟我說話。");
-        speak(greeting);
+        // 🌟 讓 AI 根據情境主動開場
+        document.getElementById('chat-status').innerText = "AI 正在進入角色... (Preparing)";
+        document.getElementById('chat-status').classList.replace('text-gray-500', 'text-indigo-500');
+
+        try {
+            // 發送隱藏指令，要求 AI 先講話
+            const res = await callApi('speak_mode', {
+                userInput: "(The user just arrived. Please start the conversation as your roleplay character. Do not break character.)",
+                history: "",
+                scenario: currentSpeakScenario
+            });
+            
+            const data = res.data;
+            appendChatMessage('ai', data.reply, data.reply_chn);
+            speak(data.reply);
+            chatHistoryText += `AI: ${data.reply}\n`;
+        } catch (err) {
+            appendChatMessage('ai', "Sorry, I couldn't start the scenario. Please try again.", "抱歉，無法啟動情境，請重試。");
+        } finally {
+            document.getElementById('chat-status').innerText = "點擊麥克風開始說話";
+            document.getElementById('chat-status').classList.replace('text-indigo-500', 'text-gray-500');
+        }
     }
 
     function toggleChatMic() {
         if (!chatRecognition) return alert("您的瀏覽器不支援語音功能。");
         if (isChatRecording) {
-            chatRecognition.stop(); // 會觸發 onend
+            chatRecognition.stop(); 
         } else {
-            window.speechSynthesis.cancel(); // 說話前先閉嘴
+            window.speechSynthesis.cancel(); 
             try { chatRecognition.start(); } catch(e) {}
         }
     }
@@ -521,22 +547,18 @@
             });
             
             const data = res.data;
-            // 處理 AI 回覆
             appendChatMessage('ai', data.reply, data.reply_chn);
             speak(data.reply);
             
-            // 處理文法回饋
             if (data.feedback && data.feedback.trim() !== "" && !data.feedback.toLowerCase().includes("perfect")) {
                 const fbDiv = document.getElementById('chat-feedback');
                 document.getElementById('feedback-text').innerText = data.feedback;
                 fbDiv.classList.remove('hidden');
-                // 自動隱藏回饋視窗
-                setTimeout(() => { fbDiv.classList.add('hidden'); }, 8000);
+                setTimeout(() => { fbDiv.classList.add('hidden'); }, 10000); // 延長提示顯示時間為 10 秒
             } else {
                 document.getElementById('chat-feedback').classList.add('hidden');
             }
             
-            // 更新歷史紀錄 (保留最近的對話即可，避免 context 過長)
             chatHistoryText += `User: ${userText}\nAI: ${data.reply}\n`;
             
         } catch (err) {
@@ -547,6 +569,18 @@
                document.getElementById('chat-status').classList.replace('text-indigo-500', 'text-gray-500');
             }
         }
+    }
+
+    // 💡 新增：求救功能邏輯
+    async function requestHint() {
+        if (isChatRecording) {
+            toggleChatMic(); // 先停止正在錄音的麥克風
+        }
+        
+        const hintText = "(I don't know how to answer or what to say. Please stay in character, but provide 2-3 suggestions/options on what I could say next, along with their Chinese translations.)";
+        
+        appendChatMessage('user', "I don't know what to say... 🥺");
+        await handleChatTurn(hintText);
     }
 
     function appendChatMessage(role, text, textChn = "") {
@@ -561,15 +595,16 @@
             div.innerHTML = `<p class="text-[15px]">${text}</p>`;
         } else {
             div.className = "self-start bg-white border border-gray-200 text-gray-800 p-3 rounded-2xl rounded-tl-none max-w-[85%] shadow-sm relative";
+            // 若為 AI 且文字包含選項或提示，稍微調整樣式
+            const formattedText = text.replace(/\n/g, '<br>');
             div.innerHTML = `
-                <button onclick="speak('${text.replace(/'/g, "\\'")}')" class="absolute -left-2 -top-2 bg-indigo-100 text-indigo-700 rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-sm">🔊</button>
-                <p class="text-[15px] font-eng ml-2">${text}</p>
-                ${textChn ? `<p class="text-xs text-gray-400 font-chn mt-2 border-t border-gray-100 pt-1 ml-2">${textChn}</p>` : ''}
+                <button onclick="speak('${text.replace(/'/g, "\\'").replace(/\n/g, ' ')}')" class="absolute -left-2 -top-2 bg-indigo-100 text-indigo-700 rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-sm z-10">🔊</button>
+                <p class="text-[15px] font-eng ml-2 leading-relaxed">${formattedText}</p>
+                ${textChn ? `<p class="text-xs text-gray-400 font-chn mt-3 border-t border-gray-100 pt-2 ml-2 leading-relaxed">${textChn.replace(/\n/g, '<br>')}</p>` : ''}
             `;
         }
         chatBox.appendChild(div);
         
-        // Trigger animation
         setTimeout(() => {
             div.style.opacity = '1';
             div.style.transform = 'translateY(0)';
@@ -709,11 +744,10 @@
         if (popup.style.display === 'block' && !popup.contains(e.target) && !e.target.classList.contains('clickable-word')) closePopup();
     });
 
-    // Library & Wordbank (Omitted details to keep code focused, assuming standard implementation)
+    // Library & Wordbank 
     function openLibrary() { document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-input').classList.remove('flex'); document.getElementById('view-library').classList.remove('hidden'); document.getElementById('view-library').classList.add('flex'); loadLibrary(); }
     function openWordBank() { document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-input').classList.remove('flex'); document.getElementById('view-wordbank').classList.remove('hidden'); document.getElementById('view-wordbank').classList.add('flex'); loadWordBank(); }
     
-    // (載入資料庫的邏輯這裡延續原本設計，為了完整性保留)
     function loadLibrary() {
         callApi('getArticles', { userId: getUserId() }).then(res => {
              const list = document.getElementById('library-list');
