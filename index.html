@@ -206,14 +206,29 @@
           <p class="mt-2 text-center text-gray-300 text-xs uppercase animate-pulse">Tap to check</p>
         </div>
         <div class="absolute w-full h-full bg-slate-800 rounded-3xl p-6 flex flex-col justify-between backface-hidden rotate-y-180 text-white">
-          <div class="flex-grow overflow-y-auto custom-scroll pt-4">
+          <div class="flex-grow overflow-y-auto custom-scroll pt-4" onclick="event.stopPropagation()">
             <p id="card-chn" class="text-xl leading-relaxed font-chn text-slate-100 mb-6">...</p>
             <div id="vocab-area" class="border-t border-slate-600 pt-4 hidden"><div id="vocab-list" class="flex flex-wrap gap-2"></div></div>
           </div>
-          <div class="mt-2 pt-3 border-t border-slate-600 flex gap-3">
-            <button onclick="speakTarget(event)" class="flex-1 bg-white/10 hover:bg-white/20 py-3 rounded-xl font-bold text-sm">🔊 朗讀 (Listen)</button>
-            <button onclick="showReviewPage()" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-xl font-bold">📖 閱讀全文</button>
+          
+          <!-- 修改後的背面按鈕區域 -->
+          <div class="mt-2 pt-3 border-t border-slate-600 flex flex-col gap-3" onclick="event.stopPropagation()">
+            <div class="flex gap-2">
+                <button onclick="speakTarget(event)" class="flex-1 bg-white/10 hover:bg-white/20 py-3 rounded-xl font-bold text-sm">🔊 朗讀</button>
+                <button id="btn-card-mic" onclick="toggleCardShadowing(event)" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-1 transition-all" title="點擊跟讀">🎤 跟讀</button>
+                <button onclick="showReviewPage()" class="flex-1 bg-white/10 hover:bg-white/20 py-3 rounded-xl font-bold text-sm">📖 全文</button>
+            </div>
+            
+            <!-- 跟讀發音回饋區域 (預設隱藏) -->
+            <div id="shadowing-feedback" class="hidden bg-slate-700/50 rounded-xl p-3 border border-slate-600">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-gray-400 text-xs font-bold">🎯 發音檢測 (Pronunciation)</span>
+                    <span id="shadowing-score" class="font-bold text-sm"></span>
+                </div>
+                <p id="shadowing-result" class="text-sm font-eng leading-relaxed">...</p>
+            </div>
           </div>
+
         </div>
       </div>
     </div>
@@ -301,11 +316,15 @@
     let utteranceQueue = [];
     const DEFAULT_RATE = 0.9, DEFAULT_PITCH = 0.9;
 
-    // --- Speak Mode Variables ---
+    // --- Speak Mode & Shadowing Variables ---
     let chatRecognition = null;
     let isChatRecording = false;
     let chatHistoryText = "";
     let currentSpeakScenario = "";
+    
+    // 🌟 獨立的字卡跟讀 (Shadowing) 語音辨識器
+    let shadowRecognition = null;
+    let isShadowRecording = false;
 
     function init() {
         const savedUser = localStorage.getItem('gem_username');
@@ -326,6 +345,7 @@
         
         loadVoices();
         initSpeechRecognition();
+        initShadowRecognition(); // 初始化跟讀辨識器
     }
 
     function handleLogin() {
@@ -389,6 +409,8 @@
     function goBackToMenu() {
       stopFullAudio();
       if(isChatRecording && chatRecognition) chatRecognition.stop();
+      if(isShadowRecording && shadowRecognition) shadowRecognition.stop();
+      
       ['view-cards', 'view-review', 'view-wordbank', 'view-library', 'view-speak'].forEach(id => {
           document.getElementById(id).classList.remove('flex');
           document.getElementById(id).classList.add('hidden');
@@ -456,8 +478,6 @@
             chatRecognition.onend = () => {
                 stopChatMicUI();
             };
-        } else {
-            console.warn("此瀏覽器不支援 Web Speech API。");
         }
     }
 
@@ -478,7 +498,6 @@
             displayTitle = scenarioSelect.options[scenarioSelect.selectedIndex].text.split(' ')[0];
         }
         
-        // 🌟 強化 Prompt：透過前端組合出強大的隱藏指令，告訴 AI 必須「扮演角色」並「引導使用者」
         currentSpeakScenario = `Roleplay Scenario: [${baseScenario}]. You MUST act as the other person in this scenario (e.g., the barista, the customs officer, the interviewer, the friend). Fully immerse in your character. If the user makes a mistake, gently correct them in your feedback. If the user asks for help or doesn't know what to say, provide 2-3 examples of what they could say next.`;
         
         document.getElementById('speak-scenario-title').innerText = displayTitle;
@@ -494,12 +513,10 @@
         document.getElementById('view-speak').classList.remove('hidden');
         document.getElementById('view-speak').classList.add('flex');
 
-        // 🌟 讓 AI 根據情境主動開場
         document.getElementById('chat-status').innerText = "AI 正在進入角色... (Preparing)";
         document.getElementById('chat-status').classList.replace('text-gray-500', 'text-indigo-500');
 
         try {
-            // 發送隱藏指令，要求 AI 先講話
             const res = await callApi('speak_mode', {
                 userInput: "(The user just arrived. Please start the conversation as your roleplay character. Do not break character.)",
                 history: "",
@@ -554,7 +571,7 @@
                 const fbDiv = document.getElementById('chat-feedback');
                 document.getElementById('feedback-text').innerText = data.feedback;
                 fbDiv.classList.remove('hidden');
-                setTimeout(() => { fbDiv.classList.add('hidden'); }, 10000); // 延長提示顯示時間為 10 秒
+                setTimeout(() => { fbDiv.classList.add('hidden'); }, 10000); 
             } else {
                 document.getElementById('chat-feedback').classList.add('hidden');
             }
@@ -571,14 +588,11 @@
         }
     }
 
-    // 💡 新增：求救功能邏輯
     async function requestHint() {
         if (isChatRecording) {
-            toggleChatMic(); // 先停止正在錄音的麥克風
+            toggleChatMic(); 
         }
-        
         const hintText = "(I don't know how to answer or what to say. Please stay in character, but provide 2-3 suggestions/options on what I could say next, along with their Chinese translations.)";
-        
         appendChatMessage('user', "I don't know what to say... 🥺");
         await handleChatTurn(hintText);
     }
@@ -595,7 +609,6 @@
             div.innerHTML = `<p class="text-[15px]">${text}</p>`;
         } else {
             div.className = "self-start bg-white border border-gray-200 text-gray-800 p-3 rounded-2xl rounded-tl-none max-w-[85%] shadow-sm relative";
-            // 若為 AI 且文字包含選項或提示，稍微調整樣式
             const formattedText = text.replace(/\n/g, '<br>');
             div.innerHTML = `
                 <button onclick="speak('${text.replace(/'/g, "\\'").replace(/\n/g, ' ')}')" class="absolute -left-2 -top-2 bg-indigo-100 text-indigo-700 rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-sm z-10">🔊</button>
@@ -613,7 +626,98 @@
     }
 
     // ==========================================
-    // 舊有功能保持不變 (產生文章、單字本等)
+    // 🎤 字卡跟讀 (Shadowing) 功能
+    // ==========================================
+    
+    function initShadowRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            shadowRecognition = new SpeechRecognition();
+            shadowRecognition.lang = 'en-US';
+            shadowRecognition.continuous = false;
+            shadowRecognition.interimResults = false;
+
+            shadowRecognition.onstart = () => {
+                isShadowRecording = true;
+                document.getElementById('btn-card-mic').classList.add('mic-active');
+                
+                const fbDiv = document.getElementById('shadowing-feedback');
+                fbDiv.classList.remove('hidden');
+                
+                document.getElementById('shadowing-result').innerHTML = "<span class='animate-pulse text-gray-300'>正在聆聽，請跟讀上方句子...</span>";
+                document.getElementById('shadowing-score').innerText = "";
+            };
+
+            shadowRecognition.onresult = (event) => {
+                const userText = event.results[0][0].transcript;
+                checkPronunciation(userText);
+            };
+
+            shadowRecognition.onerror = (event) => {
+                isShadowRecording = false;
+                document.getElementById('btn-card-mic').classList.remove('mic-active');
+                document.getElementById('shadowing-result').innerText = "發生錯誤或聽不清楚，請再試一次。";
+            };
+
+            shadowRecognition.onend = () => {
+                isShadowRecording = false;
+                document.getElementById('btn-card-mic').classList.remove('mic-active');
+            };
+        }
+    }
+
+    function toggleCardShadowing(e) {
+        e.stopPropagation(); // 避免點擊翻牌
+        if (!shadowRecognition) return alert("您的瀏覽器不支援語音功能。");
+        if (isShadowRecording) {
+            shadowRecognition.stop();
+        } else {
+            window.speechSynthesis.cancel();
+            try { shadowRecognition.start(); } catch(e) {}
+        }
+    }
+
+    function checkPronunciation(userText) {
+        // 取得目前的標準句子
+        const targetText = currentCards[currentIndex].english;
+        
+        // 正規化：轉小寫、去除標點符號、切割單字
+        const cleanTarget = targetText.toLowerCase().replace(/[^\w\s']/g, '').trim().split(/\s+/);
+        const cleanUser = userText.toLowerCase().replace(/[^\w\s']/g, '').trim().split(/\s+/);
+        
+        let matchCount = 0;
+        let targetWordsMatched = new Set();
+        
+        // 評估使用者講的每一個字，看看有沒有出現在標準句中
+        const coloredUserText = cleanUser.map((uWord) => {
+            const matchIdx = cleanTarget.findIndex((tWord, i) => tWord === uWord && !targetWordsMatched.has(i));
+            if (matchIdx !== -1) {
+                matchCount++;
+                targetWordsMatched.add(matchIdx); // 記錄已匹配過的位置，避免重複計算
+                return `<span class="text-green-400 font-bold">${uWord}</span>`; // 唸對的字：綠色
+            } else {
+                return `<span class="text-red-400 line-through opacity-80">${uWord}</span>`; // 多唸或唸錯的字：紅色+刪除線
+            }
+        }).join(' ');
+
+        // 計算分數 (最高 100%)
+        const score = Math.round((matchCount / Math.max(cleanTarget.length, 1)) * 100);
+        const cappedScore = Math.min(score, 100);
+
+        // 更新 UI
+        document.getElementById('shadowing-result').innerHTML = coloredUserText || "未聽清楚 (Not clear)";
+        
+        const scoreEl = document.getElementById('shadowing-score');
+        scoreEl.innerText = cappedScore + "%";
+        
+        // 依照分數給予不同顏色回饋
+        if (cappedScore >= 80) scoreEl.className = "font-bold text-sm text-green-400";
+        else if (cappedScore >= 50) scoreEl.className = "font-bold text-sm text-yellow-400";
+        else scoreEl.className = "font-bold text-sm text-red-400";
+    }
+
+    // ==========================================
+    // 文章、單字與主要邏輯
     // ==========================================
     function submitTopic() {
        const topic=document.getElementById('input-topic').value; if(!topic)return alert("請輸入主題");
@@ -652,9 +756,19 @@
             document.getElementById('vocab-area').classList.remove('hidden');
             vList.innerHTML = c.vocabulary.map(v => `<button onclick="event.stopPropagation();saveWord('${v.word}','${v.ipa}','${v.def}', '${escape(c.english)}', '${escape(c.chinese)}', this)" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-full shadow-sm">+ ${v.word}</button>`).join('');
         } else { document.getElementById('vocab-area').classList.add('hidden'); }
+        
+        // 翻新卡片時，隱藏前一次的發音檢測結果
+        document.getElementById('shadowing-feedback').classList.add('hidden');
+        
         document.querySelector('.group').classList.remove('flipped');
     }
-    function flipCard(el){ el.classList.toggle('flipped'); }
+    
+    function flipCard(el){ 
+        // 🌟 防呆：如果正在錄音，禁止翻轉卡片，以免干擾
+        if(isChatRecording || isShadowRecording) return; 
+        el.classList.toggle('flipped'); 
+    }
+    
     function nextCard(){ if(currentIndex<currentCards.length-1){currentIndex++; renderCard();} else { showReviewPage(false); } }
     function prevCard(){ if(currentIndex>0){currentIndex--; renderCard();} }
     function speakTarget(e){ e.stopPropagation(); speak(currentCards[currentIndex].english); }
