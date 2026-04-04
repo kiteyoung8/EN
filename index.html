@@ -21,16 +21,10 @@
     .rotate-y-180 { transform: rotateY(180deg); }
     .group.flipped .content-box { transform: rotateY(180deg); }
 
-    .clickable-word {
-        cursor: pointer; padding: 2px 0; border-radius: 4px; transition: background-color 0.2s, color 0.2s;
-    }
-    .clickable-word:hover {
-        background-color: #e0e7ff; color: #4338ca; text-decoration: underline;
-    }
+    .clickable-word { cursor: pointer; padding: 2px 0; border-radius: 4px; transition: background-color 0.2s, color 0.2s; }
+    .clickable-word:hover { background-color: #e0e7ff; color: #4338ca; text-decoration: underline; }
     
-    .reading-highlight {
-        background-color: #fef9c3; border-bottom: 2px solid #f59e0b; transition: background-color 0.3s;
-    }
+    .reading-highlight { background-color: #fef9c3; border-bottom: 2px solid #f59e0b; transition: background-color 0.3s; }
 
     #word-popup {
         position: absolute; z-index: 50; background: white; border-radius: 12px;
@@ -50,12 +44,11 @@
         70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(99, 102, 241, 0); }
         100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
     }
-    .mic-active { animation: pulse-ring 1.5s infinite; background-color: #ef4444 !important; } /* 錄音時變紅色 */
+    .mic-active { animation: pulse-ring 1.5s infinite; background-color: #ef4444 !important; }
   </style>
 </head>
 <body class="bg-gray-100 h-screen flex flex-col items-center justify-center font-sans overflow-hidden">
 
-  <!-- Login View -->
   <div id="view-login" class="fixed inset-0 bg-gray-900 bg-opacity-90 z-50 flex flex-col items-center justify-center p-6">
     <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
         <h1 class="text-2xl font-bold text-indigo-700 mb-2">👋 歡迎回來</h1>
@@ -65,7 +58,6 @@
     </div>
   </div>
 
-  <!-- Input/Dashboard View -->
   <div id="view-input" class="hidden w-full max-w-lg p-6 transition-all duration-300 h-full flex-col justify-center">
     <div class="bg-white rounded-3xl shadow-xl p-8 relative overflow-y-auto custom-scroll max-h-[90vh]">
       <div class="absolute top-4 right-4 flex gap-2">
@@ -77,15 +69,12 @@
         <button onclick="handleLogout()" class="text-xs text-red-400 hover:underline">登出</button>
       </div>
 
-      <!-- 🌟 Tabs 新增「新聞」選項 -->
       <div class="flex justify-center mt-6 mb-6 border-b border-gray-200">
-        <button onclick="switchTab('topic')" id="tab-topic" class="border-b-2 border-indigo-600 text-indigo-600 font-bold px-2 py-2 text-sm transition">✨ 生成</button>
-        <button onclick="switchTab('news')" id="tab-news" class="text-gray-500 px-2 py-2 text-sm transition hover:text-indigo-400">📰 新聞</button>
-        <button onclick="switchTab('speak')" id="tab-speak" class="text-gray-500 px-2 py-2 text-sm transition hover:text-indigo-400">🗣️ 口說</button>
-        <button onclick="switchTab('paste')" id="tab-paste" class="text-gray-500 px-2 py-2 text-sm transition hover:text-indigo-400">📋 貼上</button>
+        <button onclick="switchTab('topic')" id="tab-topic" class="border-b-2 border-indigo-600 text-indigo-600 font-bold px-4 py-2 text-sm transition">✨ 生成</button>
+        <button onclick="switchTab('speak')" id="tab-speak" class="text-gray-500 px-4 py-2 text-sm transition hover:text-indigo-400">🗣️ 口說</button>
+        <button onclick="switchTab('paste')" id="tab-paste" class="text-gray-500 px-4 py-2 text-sm transition hover:text-indigo-400">📋 貼上</button>
       </div>
 
-      <!-- Settings -->
       <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-200">
          <label class="block text-xs font-bold text-gray-500 uppercase mb-2">🗣️ 朗讀設定 (Voice Settings)</label>
          <select id="input-voice" class="w-full bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm outline-none mb-3"></select>
@@ -103,7 +92,6 @@
          </div>
       </div>
 
-      <!-- 1. Form: Topic -->
       <div id="form-topic" class="block">
         <input type="text" id="input-topic" class="w-full mb-4 px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" placeholder="輸入主題 (Topic) - e.g., 旅遊, AI...">
         <div class="grid grid-cols-2 gap-4 mb-4">
@@ -124,27 +112,8 @@
         <button onclick="submitTopic()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition">✨ 開始學習 (Start Learning)</button>
       </div>
 
-      <!-- 🌟 新增：Form: News Search -->
-      <div id="form-news" class="hidden">
-        <p class="text-sm text-gray-600 mb-4 text-center">搜尋全球最新英文新聞，並一鍵轉換為客製化字卡課程！</p>
-        <div class="flex gap-2 mb-4">
-            <input type="text" id="input-news-query" class="w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" placeholder="輸入關鍵字 (e.g. Taiwan TSMC, AI...)">
-            <button onclick="submitNewsSearch()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-3 rounded-xl shadow transition">🔍</button>
-        </div>
-        
-        <!-- 搜尋結果區塊 -->
-        <div id="news-results-area" class="hidden">
-            <h3 class="text-xs font-bold text-gray-400 uppercase mb-3">熱門結果 (Top Results)</h3>
-            <div id="news-list" class="space-y-4 max-h-[300px] overflow-y-auto custom-scroll pr-2">
-                <!-- 動態注入新聞項目 -->
-            </div>
-        </div>
-      </div>
-
-      <!-- 2. Form: Speak Mode -->
       <div id="form-speak" class="hidden">
         <p class="text-sm text-gray-600 mb-4 text-center">選擇一個情境，AI 將扮演對應角色與您互動！</p>
-        
         <select id="input-speak-scenario" onchange="toggleCustomScenario()" class="w-full mb-4 px-4 py-4 border-2 border-indigo-100 rounded-xl bg-white text-base text-indigo-800 font-bold outline-none focus:border-indigo-500 shadow-sm cursor-pointer">
             <option value="Casual conversation at a cafe">☕ 咖啡廳閒聊 (Cafe Chat)</option>
             <option value="Passing immigration and customs at the airport">🛂 機場海關 (Customs)</option>
@@ -152,13 +121,10 @@
             <option value="Job Interview for a software engineer">💼 軟體工程師面試 (Job Interview)</option>
             <option value="custom">✍️ 自訂情境 (Custom Scenario)</option>
         </select>
-        
         <input type="text" id="input-custom-scenario" class="hidden w-full mb-6 px-4 py-3 border-2 border-indigo-100 rounded-xl outline-none focus:border-indigo-500 shadow-sm transition-all" placeholder="請輸入英文情境 (例如: Checking in at a hotel)">
-
         <button onclick="initSpeakMode()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition">🎙️ 開始對話 (Start Conversation)</button>
       </div>
 
-      <!-- 3. Form: Paste -->
       <div id="form-paste" class="hidden">
         <input type="text" id="input-title" class="w-full mb-3 px-4 py-3 border rounded-xl outline-none" placeholder="文章標題 (Title)">
         <textarea id="input-content" rows="4" class="w-full mb-4 px-4 py-3 border rounded-xl outline-none" placeholder="在此貼上英文文章 (Paste English text)..."></textarea>
@@ -172,43 +138,28 @@
     </div>
   </div>
 
-  <!-- View: Speak Mode Chat Interface -->
   <div id="view-speak" class="hidden w-full max-w-lg p-4 h-full flex-col justify-center relative">
      <div class="bg-white rounded-3xl shadow-2xl flex flex-col h-[85vh] border border-gray-100 overflow-hidden relative">
-         <!-- Chat Header -->
          <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-white shadow-sm z-10">
             <button onclick="goBackToMenu()" class="text-gray-500 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-bold transition">🏠 離開</button>
             <h2 class="text-sm font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full" id="speak-scenario-title">Scenario</h2>
          </div>
-         
-         <!-- Chat History Area -->
-         <div id="chat-history" class="flex-grow p-4 overflow-y-auto custom-scroll bg-slate-50 flex flex-col gap-4 pb-20">
-            <!-- Chat bubbles will be injected here -->
-         </div>
-         
-         <!-- Feedback Banner (Top overlay) -->
+         <div id="chat-history" class="flex-grow p-4 overflow-y-auto custom-scroll bg-slate-50 flex flex-col gap-4 pb-20"></div>
          <div id="chat-feedback" class="absolute top-16 left-4 right-4 bg-yellow-100/95 backdrop-blur-sm border border-yellow-300 text-yellow-800 p-3 rounded-xl shadow-lg hidden transform transition-all text-sm z-20">
             <strong>💡 老師建議：</strong> <span id="feedback-text"></span>
             <button onclick="document.getElementById('chat-feedback').classList.add('hidden')" class="absolute top-2 right-2 text-yellow-600 font-bold">✕</button>
          </div>
-
-         <!-- Bottom Mic Control Area -->
          <div class="px-6 py-4 bg-white flex flex-col justify-center items-center border-t border-gray-100 relative">
             <p id="chat-status" class="text-xs text-gray-500 font-bold mb-3 uppercase tracking-wider">點擊麥克風開始說話</p>
             <div class="flex items-center gap-6">
-                <!-- 💡 新增：求救按鈕 -->
-                <button onclick="requestHint()" class="w-12 h-12 bg-yellow-50 border border-yellow-200 hover:bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-xl shadow-sm transition transform active:scale-95" title="不知道怎麼說？點我求救">💡</button>
-                
+                <button onclick="requestHint()" class="w-12 h-12 bg-yellow-50 border border-yellow-200 hover:bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-xl shadow-sm transition transform active:scale-95" title="求救">💡</button>
                 <button id="btn-chat-mic" onclick="toggleChatMic()" class="w-16 h-16 bg-indigo-600 hover:bg-indigo-700 rounded-full flex items-center justify-center text-3xl text-white shadow-xl transition-all">🎤</button>
-                
-                <!-- 佔位符以保持置中對齊 -->
                 <div class="w-12 h-12"></div>
             </div>
          </div>
      </div>
   </div>
 
-  <!-- View: Flashcards -->
   <div id="view-cards" class="hidden w-full max-w-lg p-4 h-full flex-col justify-center">
     <div class="flex justify-between items-center mb-4 px-2">
       <button onclick="goBackToMenu()" class="text-gray-500 hover:text-indigo-600 font-bold text-sm bg-white px-3 py-1.5 rounded-lg shadow-sm">🏠 首頁 (Home)</button>
@@ -216,39 +167,31 @@
     </div>
     <div class="relative w-full h-[70vh] perspective-1000 group cursor-pointer" onclick="flipCard(this)">
       <div class="content-box relative w-full h-full transition-all duration-500 transform-style-3d shadow-2xl rounded-3xl">
-        
-        <!-- 卡片正面 (中文) -->
         <div class="absolute w-full h-full bg-white rounded-3xl p-6 flex flex-col backface-hidden border border-gray-100">
           <div class="flex-grow overflow-y-auto custom-scroll flex flex-col justify-center">
             <h2 id="card-chn" class="text-2xl leading-relaxed text-gray-800 font-chn text-left">...</h2>
           </div>
           <p class="mt-2 text-center text-gray-300 text-xs uppercase animate-pulse">Tap to check English</p>
         </div>
-        
-        <!-- 卡片背面 (英文解答與功能) -->
         <div class="absolute w-full h-full bg-slate-800 rounded-3xl p-6 flex flex-col justify-between backface-hidden rotate-y-180 text-white">
-          
           <div class="flex-grow overflow-y-auto custom-scroll pt-4">
             <p id="card-eng" class="text-2xl leading-relaxed font-eng text-slate-100 mb-6">...</p>
             <div id="vocab-area" class="border-t border-slate-600 pt-4 hidden"><div id="vocab-list" class="flex flex-wrap gap-2"></div></div>
           </div>
-          
           <div class="mt-2 pt-3 border-t border-slate-600 flex flex-col gap-3" onclick="event.stopPropagation()">
             <div class="flex gap-2">
                 <button onclick="speakTarget(event)" class="flex-1 bg-white/10 hover:bg-white/20 py-3 rounded-xl font-bold text-sm transition">🔊 朗讀</button>
-                <button id="btn-card-mic" onclick="toggleCardShadowing(event)" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-1 transition-all" title="點擊跟讀">🎤 跟讀</button>
+                <button id="btn-card-mic" onclick="toggleCardShadowing(event)" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-1 transition-all">🎤 跟讀</button>
                 <button onclick="showReviewPage()" class="flex-1 bg-white/10 hover:bg-white/20 py-3 rounded-xl font-bold text-sm transition">📖 全文</button>
             </div>
-            
             <div id="shadowing-feedback" class="hidden bg-slate-700/50 rounded-xl p-3 border border-slate-600">
                 <div class="flex justify-between items-center mb-1">
-                    <span class="text-gray-400 text-xs font-bold">🎯 發音檢測 (Pronunciation)</span>
+                    <span class="text-gray-400 text-xs font-bold">🎯 發音檢測</span>
                     <span id="shadowing-score" class="font-bold text-sm"></span>
                 </div>
                 <p id="shadowing-result" class="text-sm font-eng leading-relaxed">...</p>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -258,7 +201,6 @@
     </div>
   </div>
 
-  <!-- View: Full Article Review -->
   <div id="view-review" class="hidden w-full max-w-lg p-6 h-full flex-col justify-center relative">
     <div class="bg-white rounded-3xl shadow-2xl p-6 h-[85vh] flex flex-col relative border border-gray-100">
       <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
@@ -268,7 +210,6 @@
             <button onclick="goBackToMenu()" class="text-gray-400 font-bold text-sm">✕</button>
         </div>
       </div>
-      
       <div class="flex-grow overflow-y-auto custom-scroll relative pr-2">
          <div id="english-area">
              <h3 id="review-title" class="text-2xl font-bold text-indigo-700 mb-4 font-eng clickable-word" onclick="speak(this.innerText)">Title</h3>
@@ -279,8 +220,6 @@
              <h3 class="text-sm font-bold text-gray-400 mb-3 font-chn bg-gray-100 inline-block px-2 py-1 rounded">💡 中文翻譯</h3>
              <div id="review-content-chn" class="prose text-gray-500 font-chn text-base leading-relaxed">(翻譯載入中...)</div>
          </div>
-
-         <!-- Word Popup -->
          <div id="word-popup">
             <div class="flex justify-between items-start mb-1">
                 <h4 id="popup-word" class="text-lg font-bold text-indigo-700">Word</h4>
@@ -294,7 +233,6 @@
             <button id="btn-popup-save" onclick="savePopupWord()" class="mt-3 w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs py-1.5 rounded transition">+ 加入生字本 (Save)</button>
          </div>
       </div>
-
       <div class="mt-4 pt-4 border-t border-gray-100 flex gap-3">
         <button id="btn-read-all" onclick="playFullArticle()" class="flex-1 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">🔊 全文朗讀</button>
         <button onclick="goBackToMenu()" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold">🏠 回首頁</button>
@@ -302,7 +240,6 @@
     </div>
   </div>
 
-  <!-- View: Wordbank & Library -->
   <div id="view-wordbank" class="hidden w-full max-w-lg p-6 h-full flex-col justify-center">
     <div class="bg-white rounded-3xl shadow-2xl p-6 h-[80vh] flex flex-col border border-gray-100">
       <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
@@ -310,7 +247,7 @@
         <button onclick="goBackToMenu()" class="text-gray-400 text-sm">✕</button>
       </div>
       <div id="wordbank-list" class="flex-grow overflow-y-auto custom-scroll space-y-3"><p class="text-center text-gray-400 mt-10">Loading...</p></div>
-      <button onclick="loadWordBank()" class="mt-4 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">↻ 重新整理 (Refresh)</button>
+      <button onclick="loadWordBank()" class="mt-4 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">↻ 重新整理</button>
     </div>
   </div>
 
@@ -321,29 +258,22 @@
         <button onclick="goBackToMenu()" class="text-gray-400 text-sm">✕</button>
       </div>
       <div id="library-list" class="flex-grow overflow-y-auto custom-scroll space-y-3"><p class="text-center text-gray-400 mt-10">Loading...</p></div>
-      <button onclick="loadLibrary()" class="mt-4 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">↻ 重新整理 (Refresh)</button>
+      <button onclick="loadLibrary()" class="mt-4 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">↻ 重新整理</button>
     </div>
   </div>
 
   <script>
-    // ⚠️ 記得將這裡的 API_URL 替換成你最新部署的 GAS Web App URL
+    // ⚠️ 記得確保這裡填寫的是你乾淨後端的網址
     const API_URL = "https://script.google.com/macros/s/AKfycbzTciZ2Z7Xrmc8IrV-VHqmJMT6rdbnnIbnE1j6YYKDv3yC3Av0fvofThL6pBmvj_GP0MQ/exec"; 
 
-    // --- Global Variables ---
     let currentCards = [], currentIndex = 0, isPlayingFull = false;
     let voices = [], wordCache = {}; 
     let currentPopupData = null, currentArticleText = "", currentArticleChinese = "", currentArticleTitle = "", currentUserId = ""; 
     let utteranceQueue = [];
     const DEFAULT_RATE = 0.9, DEFAULT_PITCH = 0.9;
 
-    // --- Speak Mode & Shadowing Variables ---
-    let chatRecognition = null;
-    let isChatRecording = false;
-    let chatHistoryText = "";
-    let currentSpeakScenario = "";
-    
-    let shadowRecognition = null;
-    let isShadowRecording = false;
+    let chatRecognition = null, isChatRecording = false, chatHistoryText = "", currentSpeakScenario = "";
+    let shadowRecognition = null, isShadowRecording = false;
 
     function init() {
         const savedUser = localStorage.getItem('gem_username');
@@ -438,77 +368,22 @@
       document.getElementById('view-input').classList.add('flex');
     }
     
-    // --- 介面切換 (🌟 支援新聞 Tab) ---
     function switchTab(mode) {
        document.getElementById('form-topic').classList.toggle('hidden', mode!=='topic');
        document.getElementById('form-speak').classList.toggle('hidden', mode!=='speak');
        document.getElementById('form-paste').classList.toggle('hidden', mode!=='paste');
-       document.getElementById('form-news').classList.toggle('hidden', mode!=='news');
        
-       const activeClass = 'border-b-2 border-indigo-600 text-indigo-600 font-bold px-2 py-2 text-sm transition';
-       const inactiveClass = 'text-gray-500 px-2 py-2 text-sm transition hover:text-indigo-400';
+       const activeClass = 'border-b-2 border-indigo-600 text-indigo-600 font-bold px-4 py-2 text-sm transition';
+       const inactiveClass = 'text-gray-500 px-4 py-2 text-sm transition hover:text-indigo-400';
        
        document.getElementById('tab-topic').className = mode==='topic' ? activeClass : inactiveClass;
        document.getElementById('tab-speak').className = mode==='speak' ? activeClass : inactiveClass;
        document.getElementById('tab-paste').className = mode==='paste' ? activeClass : inactiveClass;
-       document.getElementById('tab-news').className = mode==='news' ? activeClass : inactiveClass;
     }
 
     // ==========================================
-    // 📰 News Search 功能
+    // 🗣️ Speak Mode 
     // ==========================================
-    async function submitNewsSearch() {
-        const query = document.getElementById('input-news-query').value.trim();
-        if (!query) return alert("請輸入想搜尋的新聞關鍵字");
-        
-        document.getElementById('loading-msg').innerText = "🤖 正在跨國搜尋新聞中...";
-        document.getElementById('loading-msg').classList.remove('hidden');
-        document.getElementById('news-results-area').classList.add('hidden');
-        
-        try {
-            const res = await callApi('search_news', { query: query });
-            const newsData = res.data;
-            
-            if (newsData.length === 0) {
-                alert("找不到相關新聞，請嘗試其他關鍵字。");
-                return;
-            }
-            
-            const listContainer = document.getElementById('news-list');
-            listContainer.innerHTML = newsData.map((news, index) => {
-                const safeTitle = news.title.replace(/'/g, "&#39;");
-                const safeSnippet = (news.snippet || "").replace(/'/g, "&#39;");
-                return `
-                <div class="bg-white border border-gray-200 p-4 rounded-xl hover:shadow-md transition">
-                    <h4 class="font-bold text-indigo-700 font-eng text-sm mb-1">${news.title}</h4>
-                    <p class="text-xs text-gray-500 font-eng mb-3 line-clamp-2">${news.snippet}</p>
-                    <div class="flex justify-between items-center">
-                        <a href="${news.link}" target="_blank" class="text-xs text-blue-500 hover:underline">閱讀原文</a>
-                        <button onclick="generateFromNews('${safeTitle}', '${safeSnippet}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">✨ 將此新聞轉為課程</button>
-                    </div>
-                </div>`;
-            }).join('');
-            
-            document.getElementById('news-results-area').classList.remove('hidden');
-        } catch (e) {
-            // Error is handled in callApi
-        } finally {
-            document.getElementById('loading-msg').classList.add('hidden');
-        }
-    }
-
-    // 將所選新聞送到匯入(Import)邏輯中生成課程
-    function generateFromNews(title, snippet) {
-        // 為了確保內容足夠，可以加上一些預設提示文字
-        const content = `${title}. ${snippet}`;
-        // 使用與 "貼上文章" 相同的 API 端點
-        startGen('import', { title: title, content: content, len: 'medium' });
-    }
-
-    // ==========================================
-    // 🗣️ Speak Mode (口說對話模式核心)
-    // ==========================================
-    
     function toggleCustomScenario() {
         const select = document.getElementById('input-speak-scenario');
         const customInput = document.getElementById('input-custom-scenario');
@@ -542,14 +417,11 @@
             };
 
             chatRecognition.onerror = (event) => {
-                console.error(event.error);
                 stopChatMicUI();
                 document.getElementById('chat-status').innerText = "發生錯誤，請重試。";
             };
 
-            chatRecognition.onend = () => {
-                stopChatMicUI();
-            };
+            chatRecognition.onend = () => { stopChatMicUI(); };
         }
     }
 
@@ -557,12 +429,11 @@
         if(!chatRecognition) return alert("您的瀏覽器不支援語音功能，請使用 Chrome 或 Safari。");
         
         const scenarioSelect = document.getElementById('input-speak-scenario');
-        let displayTitle = "";
-        let baseScenario = "";
+        let displayTitle = "", baseScenario = "";
         
         if (scenarioSelect.value === 'custom') {
             const customVal = document.getElementById('input-custom-scenario').value.trim();
-            if (!customVal) return alert("請輸入自訂的英文情境！\n例如: Checking in at a hotel");
+            if (!customVal) return alert("請輸入自訂的英文情境！");
             baseScenario = customVal;
             displayTitle = "✍️ 自訂情境";
         } else {
@@ -570,10 +441,9 @@
             displayTitle = scenarioSelect.options[scenarioSelect.selectedIndex].text.split(' ')[0];
         }
         
-        currentSpeakScenario = `Roleplay Scenario: [${baseScenario}]. You MUST act as the other person in this scenario (e.g., the barista, the customs officer, the interviewer, the friend). Fully immerse in your character. If the user makes a mistake, gently correct them in your feedback. If the user asks for help or doesn't know what to say, provide 2-3 examples of what they could say next.`;
+        currentSpeakScenario = `Roleplay Scenario: [${baseScenario}]. You MUST act as the other person in this scenario. Fully immerse in your character. If the user makes a mistake, gently correct them in your feedback. If the user asks for help or doesn't know what to say, provide 2-3 examples of what they could say next.`;
         
         document.getElementById('speak-scenario-title').innerText = displayTitle;
-        
         chatHistoryText = "";
         document.getElementById('chat-history').innerHTML = "";
         document.getElementById('chat-feedback').classList.add('hidden');
@@ -585,16 +455,15 @@
         document.getElementById('view-speak').classList.remove('hidden');
         document.getElementById('view-speak').classList.add('flex');
 
-        document.getElementById('chat-status').innerText = "AI 正在進入角色... (Preparing)";
+        document.getElementById('chat-status').innerText = "AI 正在進入角色...";
         document.getElementById('chat-status').classList.replace('text-gray-500', 'text-indigo-500');
 
         try {
             const res = await callApi('speak_mode', {
-                userInput: "(The user just arrived. Please start the conversation as your roleplay character. Do not break character.)",
+                userInput: "(The user just arrived. Please start the conversation as your roleplay character.)",
                 history: "",
                 scenario: currentSpeakScenario
             });
-            
             const data = res.data;
             appendChatMessage('ai', data.reply, data.reply_chn);
             speak(data.reply);
@@ -608,13 +477,9 @@
     }
 
     function toggleChatMic() {
-        if (!chatRecognition) return alert("您的瀏覽器不支援語音功能。");
-        if (isChatRecording) {
-            chatRecognition.stop(); 
-        } else {
-            window.speechSynthesis.cancel(); 
-            try { chatRecognition.start(); } catch(e) {}
-        }
+        if (!chatRecognition) return alert("瀏覽器不支援語音。");
+        if (isChatRecording) { chatRecognition.stop(); } 
+        else { window.speechSynthesis.cancel(); try { chatRecognition.start(); } catch(e) {} }
     }
 
     function stopChatMicUI() {
@@ -625,16 +490,11 @@
     }
 
     async function handleChatTurn(userText) {
-        document.getElementById('chat-status').innerText = "AI 思考中... (Thinking)";
+        document.getElementById('chat-status').innerText = "AI 思考中...";
         document.getElementById('chat-status').classList.replace('text-gray-500', 'text-indigo-500');
         
         try {
-            const res = await callApi('speak_mode', {
-                userInput: userText,
-                history: chatHistoryText,
-                scenario: currentSpeakScenario
-            });
-            
+            const res = await callApi('speak_mode', { userInput: userText, history: chatHistoryText, scenario: currentSpeakScenario });
             const data = res.data;
             appendChatMessage('ai', data.reply, data.reply_chn);
             speak(data.reply);
@@ -649,9 +509,8 @@
             }
             
             chatHistoryText += `User: ${userText}\nAI: ${data.reply}\n`;
-            
         } catch (err) {
-            appendChatMessage('ai', "Sorry, I encountered an error. Please try again.", "抱歉，我發生錯誤，請重試。");
+            appendChatMessage('ai', "Sorry, error. Please try again.", "抱歉，發生錯誤。");
         } finally {
             if(!isChatRecording) {
                document.getElementById('chat-status').innerText = "點擊麥克風開始說話";
@@ -661,10 +520,8 @@
     }
 
     async function requestHint() {
-        if (isChatRecording) {
-            toggleChatMic(); 
-        }
-        const hintText = "(I don't know how to answer or what to say. Please stay in character, but provide 2-3 suggestions/options on what I could say next, along with their Chinese translations.)";
+        if (isChatRecording) toggleChatMic(); 
+        const hintText = "(I don't know what to say. Please provide 2-3 suggestions on what I could say next.)";
         appendChatMessage('user', "I don't know what to say... 🥺");
         await handleChatTurn(hintText);
     }
@@ -672,9 +529,7 @@
     function appendChatMessage(role, text, textChn = "") {
         const chatBox = document.getElementById('chat-history');
         const div = document.createElement('div');
-        div.style.opacity = '0';
-        div.style.transform = 'translateY(10px)';
-        div.style.transition = 'all 0.3s ease';
+        div.style.opacity = '0'; div.style.transform = 'translateY(10px)'; div.style.transition = 'all 0.3s ease';
 
         if (role === 'user') {
             div.className = "self-end bg-indigo-600 text-white p-3 rounded-2xl rounded-tr-none max-w-[85%] shadow";
@@ -689,18 +544,12 @@
             `;
         }
         chatBox.appendChild(div);
-        
-        setTimeout(() => {
-            div.style.opacity = '1';
-            div.style.transform = 'translateY(0)';
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }, 50);
+        setTimeout(() => { div.style.opacity = '1'; div.style.transform = 'translateY(0)'; chatBox.scrollTop = chatBox.scrollHeight; }, 50);
     }
 
     // ==========================================
-    // 🎤 字卡跟讀 (Shadowing) 功能
+    // 🎤 字卡跟讀 (Shadowing)
     // ==========================================
-    
     function initShadowRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
@@ -712,84 +561,59 @@
             shadowRecognition.onstart = () => {
                 isShadowRecording = true;
                 document.getElementById('btn-card-mic').classList.add('mic-active');
-                
                 const fbDiv = document.getElementById('shadowing-feedback');
                 fbDiv.classList.remove('hidden');
-                
-                document.getElementById('shadowing-result').innerHTML = "<span class='animate-pulse text-gray-300'>正在聆聽，請跟讀上方句子...</span>";
+                document.getElementById('shadowing-result').innerHTML = "<span class='animate-pulse text-gray-300'>正在聆聽...</span>";
                 document.getElementById('shadowing-score').innerText = "";
             };
 
-            shadowRecognition.onresult = (event) => {
-                const userText = event.results[0][0].transcript;
-                checkPronunciation(userText);
-            };
-
+            shadowRecognition.onresult = (event) => { checkPronunciation(event.results[0][0].transcript); };
             shadowRecognition.onerror = (event) => {
                 isShadowRecording = false;
                 document.getElementById('btn-card-mic').classList.remove('mic-active');
-                document.getElementById('shadowing-result').innerText = "發生錯誤或聽不清楚，請再試一次。";
+                document.getElementById('shadowing-result').innerText = "聽不清楚，請再試一次。";
             };
-
-            shadowRecognition.onend = () => {
-                isShadowRecording = false;
-                document.getElementById('btn-card-mic').classList.remove('mic-active');
-            };
+            shadowRecognition.onend = () => { isShadowRecording = false; document.getElementById('btn-card-mic').classList.remove('mic-active'); };
         }
     }
 
     function toggleCardShadowing(e) {
-        e.stopPropagation(); // 避免點擊翻牌
+        e.stopPropagation(); 
         if (!shadowRecognition) return alert("您的瀏覽器不支援語音功能。");
-        if (isShadowRecording) {
-            shadowRecognition.stop();
-        } else {
-            window.speechSynthesis.cancel();
-            try { shadowRecognition.start(); } catch(e) {}
-        }
+        if (isShadowRecording) shadowRecognition.stop();
+        else { window.speechSynthesis.cancel(); try { shadowRecognition.start(); } catch(e) {} }
     }
 
     function checkPronunciation(userText) {
-        // 取得目前的標準句子
         const targetText = currentCards[currentIndex].english;
-        
-        // 正規化：轉小寫、去除標點符號、切割單字
         const cleanTarget = targetText.toLowerCase().replace(/[^\w\s']/g, '').trim().split(/\s+/);
         const cleanUser = userText.toLowerCase().replace(/[^\w\s']/g, '').trim().split(/\s+/);
+        let matchCount = 0; let targetWordsMatched = new Set();
         
-        let matchCount = 0;
-        let targetWordsMatched = new Set();
-        
-        // 評估使用者講的每一個字，看看有沒有出現在標準句中
         const coloredUserText = cleanUser.map((uWord) => {
             const matchIdx = cleanTarget.findIndex((tWord, i) => tWord === uWord && !targetWordsMatched.has(i));
             if (matchIdx !== -1) {
-                matchCount++;
-                targetWordsMatched.add(matchIdx); // 記錄已匹配過的位置，避免重複計算
-                return `<span class="text-green-400 font-bold">${uWord}</span>`; // 唸對的字：綠色
+                matchCount++; targetWordsMatched.add(matchIdx); 
+                return `<span class="text-green-400 font-bold">${uWord}</span>`; 
             } else {
-                return `<span class="text-red-400 line-through opacity-80">${uWord}</span>`; // 多唸或唸錯的字：紅色+刪除線
+                return `<span class="text-red-400 line-through opacity-80">${uWord}</span>`; 
             }
         }).join(' ');
 
-        // 計算分數 (最高 100%)
         const score = Math.round((matchCount / Math.max(cleanTarget.length, 1)) * 100);
         const cappedScore = Math.min(score, 100);
 
-        // 更新 UI
-        document.getElementById('shadowing-result').innerHTML = coloredUserText || "未聽清楚 (Not clear)";
-        
+        document.getElementById('shadowing-result').innerHTML = coloredUserText || "未聽清楚";
         const scoreEl = document.getElementById('shadowing-score');
         scoreEl.innerText = cappedScore + "%";
         
-        // 依照分數給予不同顏色回饋
         if (cappedScore >= 80) scoreEl.className = "font-bold text-sm text-green-400";
         else if (cappedScore >= 50) scoreEl.className = "font-bold text-sm text-yellow-400";
         else scoreEl.className = "font-bold text-sm text-red-400";
     }
 
     // ==========================================
-    // 文章、單字與主要邏輯
+    // 基本生成與卡片邏輯
     // ==========================================
     function submitTopic() {
        const topic=document.getElementById('input-topic').value; if(!topic)return alert("請輸入主題");
@@ -831,19 +655,15 @@
             vList.innerHTML = c.vocabulary.map(v => `<button onclick="event.stopPropagation();saveWord('${v.word}','${v.ipa}','${v.def}', '${escape(c.english)}', '${escape(c.chinese)}', this)" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-full shadow-sm">+ ${v.word}</button>`).join('');
         } else { document.getElementById('vocab-area').classList.add('hidden'); }
         
-        // 翻新卡片時，隱藏前一次的發音檢測結果
         document.getElementById('shadowing-feedback').classList.add('hidden');
-        
         document.querySelector('.group').classList.remove('flipped');
     }
     
     function flipCard(el){ 
         if(isChatRecording && chatRecognition) chatRecognition.stop();
         if(isShadowRecording && shadowRecognition) shadowRecognition.stop();
-        
         el.classList.toggle('flipped'); 
     }
-    
     function nextCard(){ if(currentIndex<currentCards.length-1){currentIndex++; renderCard();} else { showReviewPage(false); } }
     function prevCard(){ if(currentIndex>0){currentIndex--; renderCard();} }
     function speakTarget(e){ e.stopPropagation(); speak(currentCards[currentIndex].english); }
@@ -855,11 +675,8 @@
         view.classList.remove('hidden'); view.classList.add('flex');
         
         const saveBtn = document.getElementById('btn-save-article');
-        if(isFromLibrary) {
-            saveBtn.innerHTML = "📂 已收藏"; saveBtn.disabled = true; saveBtn.classList.add('text-gray-400');
-        } else {
-            saveBtn.innerHTML = "💾 儲存"; saveBtn.disabled = false; saveBtn.classList.remove('text-gray-400');
-        }
+        if(isFromLibrary) { saveBtn.innerHTML = "📂 已收藏"; saveBtn.disabled = true; saveBtn.classList.add('text-gray-400'); } 
+        else { saveBtn.innerHTML = "💾 儲存"; saveBtn.disabled = false; saveBtn.classList.remove('text-gray-400'); }
 
         document.getElementById('review-title').innerText = currentArticleTitle;
         const contentDiv = document.getElementById('review-content');
@@ -881,13 +698,11 @@
         .then(() => { btn.innerText = "✓ 已儲存"; btn.disabled = true; btn.classList.add('text-green-600'); });
     }
 
-    // 字典查詢功能
     async function handleWordClick(word, el) {
         speak(word);
         const popup = document.getElementById('word-popup');
         const rect = el.getBoundingClientRect();
         const parentRect = document.getElementById('view-review').getBoundingClientRect();
-        
         let top = rect.top - parentRect.top - popup.offsetHeight - 10;
         if(top < 0) top = rect.bottom - parentRect.top + 10;
         popup.style.top = `${top}px`; popup.style.left = `${rect.left - parentRect.left}px`;
@@ -933,7 +748,6 @@
         if (popup.style.display === 'block' && !popup.contains(e.target) && !e.target.classList.contains('clickable-word')) closePopup();
     });
 
-    // Library & Wordbank 
     function openLibrary() { document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-input').classList.remove('flex'); document.getElementById('view-library').classList.remove('hidden'); document.getElementById('view-library').classList.add('flex'); loadLibrary(); }
     function openWordBank() { document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-input').classList.remove('flex'); document.getElementById('view-wordbank').classList.remove('hidden'); document.getElementById('view-wordbank').classList.add('flex'); loadWordBank(); }
     
@@ -943,10 +757,7 @@
              if(!res.data.length) list.innerHTML='<p class="text-center text-gray-400 mt-4">尚無收藏文章。</p>';
              else list.innerHTML = res.data.map(art => `
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 flex justify-between items-center group cursor-pointer hover:bg-white hover:shadow-md transition" onclick="readArchivedArticle('${art.title}', '${escape(art.content)}', '${escape(art.contentChn)}')">
-                    <div>
-                        <h3 class="font-bold text-indigo-700 font-eng text-lg">${art.title}</h3>
-                        <p class="text-xs text-gray-400 mt-1">${new Date(art.date).toLocaleDateString()}</p>
-                    </div>
+                    <div><h3 class="font-bold text-indigo-700 font-eng text-lg">${art.title}</h3><p class="text-xs text-gray-400 mt-1">${new Date(art.date).toLocaleDateString()}</p></div>
                     <button onclick="event.stopPropagation(); delArticle('${art.id}', this)" class="text-gray-300 hover:text-red-500 p-2">🗑️</button>
                 </div>`).join('');
         });
@@ -967,10 +778,7 @@
                 return `
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-3">
                     <div class="flex justify-between items-start mb-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xl font-bold text-indigo-700 cursor-pointer hover:text-indigo-900" onclick="speak('${w.word.replace(/'/g, "\\'")}')">🔊 ${w.word}</span>
-                            <span class="text-sm font-mono text-gray-500 bg-white px-1 rounded border border-gray-200">${w.ipa}</span>
-                        </div>
+                        <div class="flex items-center gap-2"><span class="text-xl font-bold text-indigo-700 cursor-pointer hover:text-indigo-900" onclick="speak('${w.word.replace(/'/g, "\\'")}')">🔊 ${w.word}</span><span class="text-sm font-mono text-gray-500 bg-white px-1 rounded border border-gray-200">${w.ipa}</span></div>
                         <button onclick="delWord('${w.id}',this)" class="text-gray-300 hover:text-red-500 p-1">🗑️</button>
                     </div>
                     <p class="text-gray-700 font-chn mb-3 font-bold border-b border-gray-200 pb-2">${w.def}</p>
