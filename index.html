@@ -8,25 +8,21 @@
   <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   
   <style>
-    /* 基礎字體與捲軸設定 */
     .font-eng { font-family: 'Merriweather', serif; }
     .font-chn { font-family: 'Noto Sans TC', sans-serif; }
     .custom-scroll::-webkit-scrollbar { width: 6px; }
     .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #c7c7c7; border-radius: 4px; }
     
-    /* 3D 翻轉卡片特效 */
     .perspective-1000 { perspective: 1000px; }
     .transform-style-3d { transform-style: preserve-3d; }
     .backface-hidden { backface-visibility: hidden; }
     .rotate-y-180 { transform: rotateY(180deg); }
     .group.flipped .content-box { transform: rotateY(180deg); }
 
-    /* 點擊單字特效 */
     .clickable-word { cursor: pointer; padding: 2px 0; border-radius: 4px; transition: background-color 0.2s, color 0.2s; }
     .clickable-word:hover { background-color: #e0e7ff; color: #4338ca; text-decoration: underline; }
     
-    /* 單字翻譯彈出視窗 */
     #word-popup {
         position: absolute; z-index: 50; background: white; border-radius: 12px;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
@@ -39,7 +35,6 @@
         width: 12px; height: 12px; background: white; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;
     }
 
-    /* 麥克風錄音脈衝動畫 */
     @keyframes pulse-ring {
         0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
         70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(99, 102, 241, 0); }
@@ -72,8 +67,10 @@
         <button onclick="handleLogout()" class="text-xs text-red-400 hover:underline">登出</button>
       </div>
 
+      <!-- 四大功能頁籤 -->
       <div class="flex justify-center mt-6 mb-6 border-b border-gray-200">
         <button onclick="switchTab('topic')" id="tab-topic" class="border-b-2 border-indigo-600 text-indigo-600 font-bold px-4 py-2 text-sm transition">✨ 生成</button>
+        <button onclick="switchTab('explore')" id="tab-explore" class="text-gray-500 px-4 py-2 text-sm transition hover:text-indigo-400">🌐 聯網</button>
         <button onclick="switchTab('speak')" id="tab-speak" class="text-gray-500 px-4 py-2 text-sm transition hover:text-indigo-400">🗣️ 口說</button>
         <button onclick="switchTab('paste')" id="tab-paste" class="text-gray-500 px-4 py-2 text-sm transition hover:text-indigo-400">📋 貼上</button>
       </div>
@@ -114,6 +111,18 @@
             <option value="adult">專業 (Professional)</option>
         </select>
         <button onclick="submitTopic()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition">✨ 開始學習</button>
+      </div>
+
+      <!-- 🌐 聯網探索模式表單 -->
+      <div id="form-explore" class="hidden">
+        <p class="text-sm text-gray-600 mb-4 text-center">輸入感興趣的時事或知識，AI 將即時上網搜尋並為您特製學習講義！</p>
+        <input type="text" id="input-explore-query" class="w-full mb-4 px-4 py-3 border-2 border-blue-200 rounded-xl outline-none focus:border-blue-500 shadow-sm" placeholder="例如：SpaceX 最新發射、蘋果秋季發表會...">
+        <select id="input-explore-level" class="w-full mb-6 px-3 py-3 border rounded-xl bg-white text-sm">
+            <option value="elementary">初級 (Elementary)</option>
+            <option value="high" selected>高中 (High School)</option>
+            <option value="adult">專業 (Professional)</option>
+        </select>
+        <button onclick="submitExplore()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition">🔍 聯網搜尋並產生教材</button>
       </div>
 
       <!-- 🎮 口說 RPG 模式表單 -->
@@ -164,7 +173,6 @@
             </div>
             <p id="mission-text" class="text-sm text-blue-800 font-bold">任務內容載入中...</p>
             
-            <!-- 🌟 AI 隱藏生字挑戰區塊 -->
             <div id="mission-vocab-area" class="hidden border-t border-blue-200 pt-2 mt-2">
                 <p class="text-[10px] text-blue-400 font-bold mb-1">✨ AI 老師將會試著在對話中使用以下生字：</p>
                 <div id="mission-vocab-list" class="flex gap-2 flex-wrap"></div>
@@ -313,7 +321,7 @@
 
   <!-- 🚀 核心 JavaScript 邏輯 -->
   <script>
-    // 🚨🚨🚨 請在此處貼上你 Google Apps Script 部署的正式網址 🚨🚨🚨
+    // 🚨🚨🚨 請在此處貼上你 Google Apps Script 最新部署的正式網址 🚨🚨🚨
     const API_URL = "https://script.google.com/macros/s/AKfycbzTciZ2Z7Xrmc8IrV-VHqmJMT6rdbnnIbnE1j6YYKDv3yC3Av0fvofThL6pBmvj_GP0MQ/exec"; 
 
     // 全局變數
@@ -351,7 +359,6 @@
     function handleLogout() { localStorage.removeItem('gem_username'); location.reload(); }
     function getUserId() { if (!currentUserId) throw new Error("請先登入"); return currentUserId; }
 
-    // TTS 語音設定
     function loadVoices() {
       voices = window.speechSynthesis.getVoices();
       const select = document.getElementById('input-voice'); select.innerHTML = '';
@@ -378,7 +385,6 @@
         window.speechSynthesis.speak(u); 
     }
 
-    // API 呼叫包裝
     async function callApi(action, params) {
       try {
         const res = await fetch(API_URL, { method: "POST", body: JSON.stringify({ action, ...params }) });
@@ -388,7 +394,6 @@
       } catch (e) { alert("Error: " + e.message); throw e; }
     }
 
-    // 畫面切換控制
     function goBackToMenu() {
       stopFullAudio();
       if(isChatRecording && chatRecognition) chatRecognition.stop();
@@ -397,13 +402,18 @@
       document.getElementById('view-input').classList.remove('hidden'); document.getElementById('view-input').classList.add('flex');
     }
     
+    // 🌐 更新支援四大功能頁籤
     function switchTab(mode) {
        document.getElementById('form-topic').classList.toggle('hidden', mode!=='topic');
+       document.getElementById('form-explore').classList.toggle('hidden', mode!=='explore');
        document.getElementById('form-speak').classList.toggle('hidden', mode!=='speak');
        document.getElementById('form-paste').classList.toggle('hidden', mode!=='paste');
+       
        const activeClass = 'border-b-2 border-indigo-600 text-indigo-600 font-bold px-4 py-2 text-sm transition';
        const inactiveClass = 'text-gray-500 px-4 py-2 text-sm transition hover:text-indigo-400';
+       
        document.getElementById('tab-topic').className = mode==='topic' ? activeClass : inactiveClass;
+       document.getElementById('tab-explore').className = mode==='explore' ? activeClass : inactiveClass;
        document.getElementById('tab-speak').className = mode==='speak' ? activeClass : inactiveClass;
        document.getElementById('tab-paste').className = mode==='paste' ? activeClass : inactiveClass;
     }
@@ -454,7 +464,6 @@
         }
     }
 
-    // 🌟 初始化對話 (結合難度任務與生字抽取)
     async function initSpeakMode() {
         if(!chatRecognition) return alert("您的瀏覽器不支援語音功能。");
         const scenarioSelect = document.getElementById('input-speak-scenario');
@@ -469,8 +478,6 @@
         } else {
             baseScenario = scenarioSelect.value; 
             displayTitle = scenarioSelect.options[scenarioSelect.selectedIndex].text.split(' ')[0];
-            
-            // 難度劇本矩陣
             if (baseScenario.includes("cafe")) {
                 if(difficultySelect === 'easy') currentSpeakMission = "向店員點一杯你想喝的飲料，並詢問總共多少錢。";
                 else if(difficultySelect === 'medium') currentSpeakMission = "向店員抱怨飲料做錯了(例如熱的做成冰的)，並要求對方重做一杯。";
@@ -494,7 +501,6 @@
         if(difficultySelect === 'medium') aiPersonality = "Be slightly hesitant or make a minor mistake that the user has to correct.";
         if(difficultySelect === 'hard') aiPersonality = "Be strict, skeptical, and uncooperative. Make it very difficult for the user to achieve their mission. Only yield if their argument is extremely convincing.";
         
-        // UI 初始化
         document.getElementById('speak-scenario-title').innerText = displayTitle;
         document.getElementById('mission-text').innerText = currentSpeakMission;
         document.getElementById('mission-banner').classList.remove('hidden');
@@ -503,19 +509,16 @@
         statusEl.innerText = "未完成"; statusEl.className = "text-xs font-bold text-gray-400 bg-white px-2 py-0.5 rounded border border-gray-200";
 
         chatHistoryText = ""; document.getElementById('chat-history').innerHTML = ""; document.getElementById('chat-feedback').classList.add('hidden');
-        
         ['view-input', 'view-cards', 'view-review', 'view-wordbank', 'view-library'].forEach(id => { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); });
         document.getElementById('view-speak').classList.remove('hidden'); document.getElementById('view-speak').classList.add('flex');
 
-        // 🔥 彎道超車：自動抓取生字本並融入 prompt
-        document.getElementById('chat-status').innerText = "正在從生字本準備單字挑戰...";
+        document.getElementById('chat-status').innerText = "正在準備單字挑戰...";
         let vocabInstruction = "";
         try {
             const vRes = await callApi('getVocab', { userId: getUserId() });
             if (vRes.status === 'success' && vRes.data.length > 0) {
                 const shuffled = vRes.data.sort(() => 0.5 - Math.random());
                 const targetVocab = shuffled.slice(0, 3).map(v => v.word);
-                
                 document.getElementById('mission-vocab-area').classList.remove('hidden');
                 document.getElementById('mission-vocab-list').innerHTML = targetVocab.map(w => `<span class="bg-white text-blue-600 px-2 py-0.5 rounded text-xs border border-blue-100 shadow-sm">${w}</span>`).join('');
                 vocabInstruction = `\n\nSECRET TUTOR TASK: Please naturally weave at least one of these vocabulary words into your English replies to test the user: [${targetVocab.join(', ')}].`;
@@ -550,7 +553,6 @@
             const res = await callApi('speak_mode', { userInput: userText, history: chatHistoryText, scenario: currentSpeakScenario, mission: currentSpeakMission });
             const data = res.data;
             
-            // 🎯 任務過關判定
             if (data.mission_cleared === true) {
                 const statusEl = document.getElementById('mission-status');
                 if(statusEl.innerText !== "🎉 MISSION CLEARED") {
@@ -564,8 +566,6 @@
             
             if (data.feedback && data.feedback.trim() !== "" && !data.feedback.toLowerCase().includes("perfect")) {
                 const fbDiv = document.getElementById('chat-feedback');
-                
-                // 🪄 點擊發音建議
                 const formattedFeedback = data.feedback.replace(/([a-zA-Z][a-zA-Z\s.,?!']{4,}[a-zA-Z.?!])/g, function(match) {
                     const safeText = match.replace(/'/g, "\\'"); 
                     return `<span class="inline-block bg-white border border-indigo-200 text-indigo-700 font-bold cursor-pointer hover:bg-indigo-50 rounded-lg px-2 py-0.5 my-1 shadow-sm transition transform active:scale-95" onclick="speak('${safeText}')" title="點擊發音">🔊 ${match}</span>`;
@@ -609,7 +609,7 @@
     }
 
     // ==========================================
-    // 發音跟讀 (Shadowing) 與 字卡生成邏輯
+    // 發音跟讀 (Shadowing) 與 產生字卡邏輯
     // ==========================================
     function initShadowRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -643,6 +643,15 @@
         else scoreEl.className = "font-bold text-sm text-red-400";
     }
 
+    // 🌐 新增的聯網觸發函式
+    function submitExplore() {
+       const query = document.getElementById('input-explore-query').value.trim(); 
+       if(!query) return alert("請輸入想要聯網搜尋的關鍵字");
+       document.getElementById('loading-msg').innerText = "🌐 AI 正在網路上為您蒐集並提煉資料..."; 
+       document.getElementById('loading-msg').classList.remove('hidden');
+       startGen('search_web', { query: query, level: document.getElementById('input-explore-level').value });
+    }
+
     function submitTopic() {
        const topic=document.getElementById('input-topic').value; if(!topic)return alert("請輸入主題");
        document.getElementById('loading-msg').innerText = "🤖 AI 正在準備中..."; document.getElementById('loading-msg').classList.remove('hidden');
@@ -653,6 +662,7 @@
        document.getElementById('loading-msg').innerText = "🤖 AI 正在準備中..."; document.getElementById('loading-msg').classList.remove('hidden');
        startGen('import', { title: document.getElementById('input-title').value, content:txt, len:document.getElementById('input-len-paste').value });
     }
+
     function startGen(act, data) {
         callApi(act, data).then(res => {
             document.getElementById('loading-msg').classList.add('hidden');
@@ -721,7 +731,7 @@
     }
     document.addEventListener('click', function(e) { const popup = document.getElementById('word-popup'); if (popup.style.display === 'block' && !popup.contains(e.target) && !e.target.classList.contains('clickable-word')) closePopup(); });
 
-    // 文章庫與生字本存取
+    // 文章庫與生字本
     function openLibrary() { document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-input').classList.remove('flex'); document.getElementById('view-library').classList.remove('hidden'); document.getElementById('view-library').classList.add('flex'); loadLibrary(); }
     function openWordBank() { document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-input').classList.remove('flex'); document.getElementById('view-wordbank').classList.remove('hidden'); document.getElementById('view-wordbank').classList.add('flex'); loadWordBank(); }
     
