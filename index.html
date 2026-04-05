@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GemArticle - AI Tutor</title>
+  <title>GemArticle - Ultimate AI Tutor</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   
@@ -90,6 +90,7 @@
          </div>
       </div>
 
+      <!-- 生成模式 -->
       <div id="form-topic" class="block">
         <input type="text" id="input-topic" class="w-full mb-4 px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" placeholder="輸入主題 (Topic) - e.g., 旅遊, AI...">
         <div class="grid grid-cols-2 gap-4 mb-4">
@@ -110,19 +111,31 @@
         <button onclick="submitTopic()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition">✨ 開始學習</button>
       </div>
 
+      <!-- 🎮 口說 RPG 模式 -->
       <div id="form-speak" class="hidden">
-        <p class="text-sm text-gray-600 mb-4 text-center">選擇一個情境，AI 將扮演對應角色與您互動！</p>
-        <select id="input-speak-scenario" onchange="toggleCustomScenario()" class="w-full mb-4 px-4 py-4 border-2 border-indigo-100 rounded-xl bg-white text-base text-indigo-800 font-bold outline-none focus:border-indigo-500 shadow-sm cursor-pointer">
-            <option value="Casual conversation at a cafe">☕ 咖啡廳閒聊</option>
-            <option value="Passing immigration and customs at the airport">🛂 機場海關</option>
-            <option value="Ordering food at a fast food restaurant">🍔 餐廳點餐</option>
-            <option value="Job Interview for a software engineer">💼 面試</option>
-            <option value="custom">✍️ 自訂情境</option>
-        </select>
+        <p class="text-sm text-gray-600 mb-4 text-center">選擇情境與難度，AI 將扮演對應角色與您互動！</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <select id="input-speak-scenario" onchange="toggleCustomScenario()" class="w-full px-4 py-4 border-2 border-indigo-100 rounded-xl bg-white text-sm text-indigo-800 font-bold outline-none focus:border-indigo-500 shadow-sm cursor-pointer">
+                <option value="Casual conversation at a cafe">☕ 咖啡廳 (Cafe)</option>
+                <option value="Passing immigration and customs at the airport">🛂 機場海關 (Customs)</option>
+                <option value="Ordering food at a fast food restaurant">🍔 餐廳點餐 (Restaurant)</option>
+                <option value="Job Interview for a software engineer">💼 英文面試 (Interview)</option>
+                <option value="custom">✍️ 自訂情境</option>
+            </select>
+            
+            <select id="input-speak-difficulty" class="w-full px-4 py-4 border-2 border-indigo-100 rounded-xl bg-white text-sm font-bold outline-none focus:border-indigo-500 shadow-sm cursor-pointer">
+                <option value="easy">🟢 簡單 (日常順暢對話)</option>
+                <option value="medium">🟡 中等 (處理突發狀況)</option>
+                <option value="hard">🔴 困難 (極限交涉說服)</option>
+            </select>
+        </div>
+
         <input type="text" id="input-custom-scenario" class="hidden w-full mb-6 px-4 py-3 border-2 border-indigo-100 rounded-xl outline-none focus:border-indigo-500 shadow-sm transition-all" placeholder="請輸入英文情境 (例如: Checking in at a hotel)">
         <button onclick="initSpeakMode()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition">🎙️ 開始對話</button>
       </div>
 
+      <!-- 貼上模式 -->
       <div id="form-paste" class="hidden">
         <input type="text" id="input-title" class="w-full mb-3 px-4 py-3 border rounded-xl outline-none" placeholder="文章標題 (Title)">
         <textarea id="input-content" rows="4" class="w-full mb-4 px-4 py-3 border rounded-xl outline-none" placeholder="在此貼上英文文章..."></textarea>
@@ -141,9 +154,18 @@
             <h2 class="text-sm font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full" id="speak-scenario-title">Scenario</h2>
          </div>
          
+         <!-- 🎯 任務目標橫幅 -->
+         <div id="mission-banner" class="bg-blue-50 border-l-4 border-blue-500 p-3 mx-4 mt-4 rounded shadow-sm hidden z-10 relative">
+            <div class="flex justify-between items-start">
+                <p class="text-xs text-blue-500 font-bold uppercase mb-1 flex items-center gap-1"><span class="animate-bounce">🎯</span> 本場任務 (Mission)</p>
+                <span id="mission-status" class="text-xs font-bold text-gray-400 bg-white px-2 py-0.5 rounded border border-gray-200">未完成</span>
+            </div>
+            <p id="mission-text" class="text-sm text-blue-800 font-bold">任務內容載入中...</p>
+         </div>
+         
          <div id="chat-history" class="flex-grow p-4 overflow-y-auto custom-scroll bg-slate-50 flex flex-col gap-4 pb-20"></div>
          
-         <!-- 💡 老師建議 (加入點擊發音支援) -->
+         <!-- 💡 老師建議 (含點擊發音) -->
          <div id="chat-feedback" class="absolute top-16 left-4 right-4 bg-yellow-100/95 backdrop-blur-sm border border-yellow-300 text-yellow-800 p-4 rounded-xl shadow-lg hidden transform transition-all text-sm z-20 flex flex-col gap-2">
             <div class="flex justify-between items-start">
                 <strong>💡 老師建議：</strong>
@@ -162,12 +184,11 @@
                     <button id="btn-chat-mic" onclick="toggleChatMic()" class="w-14 h-14 bg-indigo-600 hover:bg-indigo-700 rounded-full flex items-center justify-center text-2xl text-white shadow-xl transition-all">🎤</button>
                 </div>
                 
-                <button id="btn-mic-lang" onclick="toggleMicLang()" class="w-10 h-10 flex flex-col items-center justify-center bg-gray-50 border border-gray-200 hover:bg-gray-100 rounded-full text-[10px] font-bold text-gray-500 shadow-sm transition">
+                <button id="btn-mic-lang" onclick="toggleMicLang()" class="w-10 h-10 flex flex-col items-center justify-center bg-gray-50 border border-gray-200 hover:bg-gray-100 rounded-full text-[10px] font-bold text-gray-500 shadow-sm transition" title="切換語言">
                     <span id="mic-lang-icon" class="text-sm">🇺🇸</span>
                 </button>
             </div>
             
-            <!-- ⌨️ 文字輸入框 -->
             <div class="w-full max-w-sm flex gap-2">
                 <input type="text" id="chat-text-input" class="flex-grow px-4 py-2 border border-gray-300 rounded-full outline-none focus:border-indigo-500 text-sm shadow-inner" placeholder="輸入英文或中文回覆..." onkeypress="handleChatKeyPress(event)">
                 <button onclick="sendChatText()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-full text-sm font-bold shadow-sm transition shrink-0 transform active:scale-95">送出</button>
@@ -176,7 +197,7 @@
      </div>
   </div>
 
-  <!-- 字卡與其他介面 (保持不變) -->
+  <!-- 字卡與其他介面 -->
   <div id="view-cards" class="hidden w-full max-w-lg p-4 h-full flex-col justify-center">
     <div class="flex justify-between items-center mb-4 px-2">
       <button onclick="goBackToMenu()" class="text-gray-500 hover:text-indigo-600 font-bold text-sm bg-white px-3 py-1.5 rounded-lg shadow-sm">🏠 首頁</button>
@@ -218,13 +239,12 @@
     </div>
   </div>
 
-  <!-- 全文閱讀、生字、文章庫介面隱藏 (保持與上版相同) -->
   <div id="view-review" class="hidden w-full max-w-lg p-6 h-full flex-col justify-center relative"><div class="bg-white rounded-3xl shadow-2xl p-6 h-[85vh] flex flex-col relative border border-gray-100"><div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-100"><h2 class="text-xl font-bold text-gray-800 font-eng">📖 全文閱讀</h2><div class="flex gap-2"><button id="btn-save-article" onclick="saveCurrentArticle()" class="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded transition font-bold text-sm">💾 儲存</button><button onclick="goBackToMenu()" class="text-gray-400 font-bold text-sm">✕</button></div></div><div class="flex-grow overflow-y-auto custom-scroll relative pr-2"><div id="english-area"><h3 id="review-title" class="text-2xl font-bold text-indigo-700 mb-4 font-eng clickable-word" onclick="speak(this.innerText)">Title</h3><div id="review-content" class="prose text-gray-800 font-eng text-lg leading-loose mb-6"></div></div><hr class="border-t-4 border-indigo-100 my-8 rounded-full"><div id="chinese-area"><h3 class="text-sm font-bold text-gray-400 mb-3 font-chn bg-gray-100 inline-block px-2 py-1 rounded">💡 中文翻譯</h3><div id="review-content-chn" class="prose text-gray-500 font-chn text-base leading-relaxed">(翻譯載入中...)</div></div><div id="word-popup"><div class="flex justify-between items-start mb-1"><h4 id="popup-word" class="text-lg font-bold text-indigo-700">Word</h4><button onclick="closePopup()" class="text-gray-300 hover:text-gray-500">×</button></div><div class="flex items-center gap-2 mb-2"><span id="popup-ipa" class="text-xs text-gray-500 font-mono">/ipa/</span><button onclick="playPopupAudio()" class="text-indigo-500 text-xs hover:bg-indigo-50 rounded px-1">🔊</button></div><p id="popup-def" class="text-sm text-gray-700 font-chn leading-snug">Loading definition...</p><button id="btn-popup-save" onclick="savePopupWord()" class="mt-3 w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs py-1.5 rounded transition">+ 加入生字本</button></div></div><div class="mt-4 pt-4 border-t border-gray-100 flex gap-3"><button id="btn-read-all" onclick="playFullArticle()" class="flex-1 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">🔊 全文朗讀</button><button onclick="goBackToMenu()" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold">🏠 回首頁</button></div></div></div>
   <div id="view-wordbank" class="hidden w-full max-w-lg p-6 h-full flex-col justify-center"><div class="bg-white rounded-3xl shadow-2xl p-6 h-[80vh] flex flex-col border border-gray-100"><div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-100"><h2 class="text-xl font-bold text-gray-800 font-chn">📚 我的生字本</h2><button onclick="goBackToMenu()" class="text-gray-400 text-sm">✕</button></div><div id="wordbank-list" class="flex-grow overflow-y-auto custom-scroll space-y-3"><p class="text-center text-gray-400 mt-10">Loading...</p></div><button onclick="loadWordBank()" class="mt-4 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">↻ 重新整理</button></div></div>
   <div id="view-library" class="hidden w-full max-w-lg p-6 h-full flex-col justify-center"><div class="bg-white rounded-3xl shadow-2xl p-6 h-[80vh] flex flex-col border border-gray-100"><div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-100"><h2 class="text-xl font-bold text-gray-800 font-chn">📂 我的文章庫</h2><button onclick="goBackToMenu()" class="text-gray-400 text-sm">✕</button></div><div id="library-list" class="flex-grow overflow-y-auto custom-scroll space-y-3"><p class="text-center text-gray-400 mt-10">Loading...</p></div><button onclick="loadLibrary()" class="mt-4 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">↻ 重新整理</button></div></div>
 
   <script>
-    // 🚨 這裡請務必替換成你的 Google Apps Script 部署網址 🚨
+    // 🚨 這裡請務必替換成你剛剛建立新版本的 Google Apps Script 部署網址 🚨
     const API_URL = "https://script.google.com/macros/s/AKfycbzTciZ2Z7Xrmc8IrV-VHqmJMT6rdbnnIbnE1j6YYKDv3yC3Av0fvofThL6pBmvj_GP0MQ/exec"; 
 
     // 全局變數
@@ -234,18 +254,17 @@
     let utteranceQueue = [];
     const DEFAULT_RATE = 0.9, DEFAULT_PITCH = 0.9;
 
-    let chatRecognition = null, isChatRecording = false, chatHistoryText = "", currentSpeakScenario = "";
+    let chatRecognition = null, isChatRecording = false, chatHistoryText = "";
+    let currentSpeakScenario = "", currentSpeakMission = "";
     let shadowRecognition = null, isShadowRecording = false;
     let currentMicLang = 'en-US'; 
 
     function init() {
         const savedUser = localStorage.getItem('gem_username');
         if (savedUser) {
-            currentUserId = savedUser;
-            document.getElementById('display-user').innerText = currentUserId;
+            currentUserId = savedUser; document.getElementById('display-user').innerText = currentUserId;
             document.getElementById('view-login').classList.add('hidden');
-            document.getElementById('view-input').classList.remove('hidden');
-            document.getElementById('view-input').classList.add('flex');
+            document.getElementById('view-input').classList.remove('hidden'); document.getElementById('view-input').classList.add('flex');
         } else { document.getElementById('view-login').classList.remove('hidden'); }
         
         document.getElementById('input-rate').value = DEFAULT_RATE; document.getElementById('input-pitch').value = DEFAULT_PITCH;
@@ -264,7 +283,6 @@
     function handleLogout() { localStorage.removeItem('gem_username'); location.reload(); }
     function getUserId() { if (!currentUserId) throw new Error("請先登入"); return currentUserId; }
 
-    // TTS 語音
     function loadVoices() {
       voices = window.speechSynthesis.getVoices();
       const select = document.getElementById('input-voice'); select.innerHTML = '';
@@ -284,16 +302,13 @@
 
     function speak(txt) { 
         window.speechSynthesis.cancel(); 
-        const u = new SpeechSynthesisUtterance(txt); 
-        u.lang = 'en-US'; 
+        const u = new SpeechSynthesisUtterance(txt); u.lang = 'en-US'; 
         u.rate = parseFloat(document.getElementById('input-rate').value) || 1;
         u.pitch = parseFloat(document.getElementById('input-pitch').value) || 1;
-        const v = voices[document.getElementById('input-voice').value]; 
-        if(v) u.voice = v; 
+        const v = voices[document.getElementById('input-voice').value]; if(v) u.voice = v; 
         window.speechSynthesis.speak(u); 
     }
 
-    // API
     async function callApi(action, params) {
       try {
         const res = await fetch(API_URL, { method: "POST", body: JSON.stringify({ action, ...params }) });
@@ -323,7 +338,7 @@
     }
 
     // ==========================================
-    // 🗣️ Speak Mode (口說與雙語家教功能)
+    // 🗣️ Speak Mode (RPG 任務引擎與雙語家教)
     // ==========================================
     function toggleCustomScenario() {
         const select = document.getElementById('input-speak-scenario');
@@ -339,61 +354,87 @@
         if (chatRecognition) chatRecognition.lang = currentMicLang;
     }
 
-    // ⌨️ 文字送出對話
     async function sendChatText() {
         const inputEl = document.getElementById('chat-text-input');
         const text = inputEl.value.trim();
         if (!text) return;
-        
-        inputEl.value = ''; // 清空輸入框
-        appendChatMessage('user', text);
-        await handleChatTurn(text);
+        inputEl.value = ''; appendChatMessage('user', text); await handleChatTurn(text);
     }
-
-    function handleChatKeyPress(e) {
-        if (e.key === 'Enter') sendChatText();
-    }
+    function handleChatKeyPress(e) { if (e.key === 'Enter') sendChatText(); }
 
     function initSpeechRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
             chatRecognition = new SpeechRecognition();
             chatRecognition.lang = currentMicLang; 
-            chatRecognition.continuous = false;
-            chatRecognition.interimResults = false;
+            chatRecognition.continuous = false; chatRecognition.interimResults = false;
 
             chatRecognition.onstart = () => {
-                isChatRecording = true;
-                document.getElementById('btn-chat-mic').classList.add('mic-active');
+                isChatRecording = true; document.getElementById('btn-chat-mic').classList.add('mic-active');
                 document.getElementById('chat-status').innerText = `聆聽中... (${currentMicLang === 'en-US' ? 'EN' : '中文'})`;
                 document.getElementById('chat-status').classList.replace('text-gray-400', 'text-red-500');
             };
-
             chatRecognition.onresult = async (event) => {
                 const text = event.results[0][0].transcript;
-                appendChatMessage('user', text);
-                await handleChatTurn(text);
+                appendChatMessage('user', text); await handleChatTurn(text);
             };
-
             chatRecognition.onerror = () => { stopChatMicUI(); document.getElementById('chat-status').innerText = "請再試一次"; };
             chatRecognition.onend = () => { stopChatMicUI(); };
         }
     }
 
+    // 🎯 核心：初始化角色、任務與難度
     async function initSpeakMode() {
         if(!chatRecognition) return alert("您的瀏覽器不支援語音功能。");
         const scenarioSelect = document.getElementById('input-speak-scenario');
+        const difficultySelect = document.getElementById('input-speak-difficulty').value;
         let displayTitle = "", baseScenario = "";
+        
         if (scenarioSelect.value === 'custom') {
             const customVal = document.getElementById('input-custom-scenario').value.trim();
             if (!customVal) return alert("請輸入自訂情境！");
             baseScenario = customVal; displayTitle = "✍️ 自訂情境";
+            currentSpeakMission = "與對方建立友好的對話交流並成功結束話題";
         } else {
-            baseScenario = scenarioSelect.value; displayTitle = scenarioSelect.options[scenarioSelect.selectedIndex].text.split(' ')[0];
+            baseScenario = scenarioSelect.value; 
+            displayTitle = scenarioSelect.options[scenarioSelect.selectedIndex].text.split(' ')[0];
+            
+            // 任務矩陣
+            if (baseScenario.includes("cafe")) {
+                if(difficultySelect === 'easy') currentSpeakMission = "向店員點一杯你想喝的飲料，並詢問總共多少錢。";
+                else if(difficultySelect === 'medium') currentSpeakMission = "向店員抱怨飲料做錯了(例如熱的做成冰的)，並要求對方重做一杯。";
+                else currentSpeakMission = "成功說服店員賣給你一杯『不在菜單上的隱藏特調』。";
+            } 
+            else if (baseScenario.includes("airport")) {
+                if(difficultySelect === 'easy') currentSpeakMission = "順利回答海關關於「來訪目的」與「停留時間」的基本問題。";
+                else if(difficultySelect === 'medium') currentSpeakMission = "海關懷疑你的行李有違禁品，請向他解釋那是台灣名產(如鳳梨酥)並非農產品。";
+                else currentSpeakMission = "你的簽證出了點問題，請試圖說服海關讓你聯絡大使館或通融放行。";
+            } 
+            else if (baseScenario.includes("restaurant")) {
+                if(difficultySelect === 'easy') currentSpeakMission = "順利向服務生點一份主餐與一份附餐。";
+                else if(difficultySelect === 'medium') currentSpeakMission = "抱怨餐點裡面有蟲子，並堅決要求經理出面處理。";
+                else currentSpeakMission = "結帳時發現忘記帶錢包，試圖與經理協商讓你賒帳或用洗碗抵債。";
+            } 
+            else if (baseScenario.includes("Interview")) {
+                if(difficultySelect === 'easy') currentSpeakMission = "順利用英文向面試官做一個簡短的自我介紹。";
+                else if(difficultySelect === 'medium') currentSpeakMission = "完美回答面試官的刁鑽問題：「請告訴我你最大的缺點是什麼？」";
+                else currentSpeakMission = "說服面試官：雖然你完全沒有相關經驗，但你要求比一般新人高 30% 的薪水。";
+            }
         }
         
-        currentSpeakScenario = `Roleplay Scenario: [${baseScenario}]. You MUST act as the other person in this scenario. Fully immerse in your character.`;
+        let aiPersonality = "Be friendly and cooperative.";
+        if(difficultySelect === 'medium') aiPersonality = "Be slightly hesitant or make a minor mistake that the user has to correct.";
+        if(difficultySelect === 'hard') aiPersonality = "Be strict, skeptical, and uncooperative. Make it very difficult for the user to achieve their mission. Only yield if their argument is extremely convincing.";
+        
+        currentSpeakScenario = `Roleplay Scenario: [${baseScenario}]. You MUST act as the other person in this scenario. Fully immerse in your character. ${aiPersonality}`;
+        
+        // 任務 UI 初始化
         document.getElementById('speak-scenario-title').innerText = displayTitle;
+        document.getElementById('mission-text').innerText = currentSpeakMission;
+        document.getElementById('mission-banner').classList.remove('hidden');
+        const statusEl = document.getElementById('mission-status');
+        statusEl.innerText = "未完成"; statusEl.className = "text-xs font-bold text-gray-400 bg-white px-2 py-0.5 rounded border border-gray-200";
+
         chatHistoryText = ""; document.getElementById('chat-history').innerHTML = ""; document.getElementById('chat-feedback').classList.add('hidden');
         
         ['view-input', 'view-cards', 'view-review', 'view-wordbank', 'view-library'].forEach(id => { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); });
@@ -401,7 +442,7 @@
 
         document.getElementById('chat-status').innerText = "AI 正在進入角色...";
         try {
-            const res = await callApi('speak_mode', { userInput: "(Please start the conversation.)", history: "", scenario: currentSpeakScenario });
+            const res = await callApi('speak_mode', { userInput: "(Please start the conversation.)", history: "", scenario: currentSpeakScenario, mission: currentSpeakMission });
             appendChatMessage('ai', res.data.reply, res.data.reply_chn); speak(res.data.reply); chatHistoryText += `AI: ${res.data.reply}\n`;
         } catch (err) { appendChatMessage('ai', "連線失敗，請重試。"); } 
         finally { document.getElementById('chat-status').innerText = "點擊麥克風 / 或輸入文字"; }
@@ -419,28 +460,38 @@
         document.getElementById('chat-status').classList.replace('text-red-500', 'text-gray-400');
     }
 
-    // 💡 處理 AI 回傳，並產生可點擊的建議
     async function handleChatTurn(userText) {
         document.getElementById('chat-status').innerText = "AI 思考中...";
         try {
-            const res = await callApi('speak_mode', { userInput: userText, history: chatHistoryText, scenario: currentSpeakScenario });
+            const res = await callApi('speak_mode', { userInput: userText, history: chatHistoryText, scenario: currentSpeakScenario, mission: currentSpeakMission });
             const data = res.data;
+            
+            // 🎯 任務過關判定
+            if (data.mission_cleared === true) {
+                const statusEl = document.getElementById('mission-status');
+                if(statusEl.innerText !== "🎉 MISSION CLEARED") {
+                    statusEl.innerText = "🎉 MISSION CLEARED";
+                    statusEl.className = "text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded border border-green-300 animate-pulse";
+                    data.feedback = "🏆 **太神啦！任務達成！**\n" + (data.feedback || "");
+                }
+            }
+            
             appendChatMessage('ai', data.reply, data.reply_chn); speak(data.reply); 
             
             if (data.feedback && data.feedback.trim() !== "" && !data.feedback.toLowerCase().includes("perfect")) {
                 const fbDiv = document.getElementById('chat-feedback');
                 
-                // 🪄 特殊處理：將英文句子變成可點擊發音的按鈕 (使用 Regex 尋找連續英文字)
+                // 🪄 點擊發音魔法：找出英文句子並變成按鈕
                 const formattedFeedback = data.feedback.replace(/([a-zA-Z][a-zA-Z\s.,?!']{4,}[a-zA-Z.?!])/g, function(match) {
-                    const safeText = match.replace(/'/g, "\\'"); // 避免單引號破壞 onclick
+                    const safeText = match.replace(/'/g, "\\'"); 
                     return `<span class="inline-block bg-white border border-indigo-200 text-indigo-700 font-bold cursor-pointer hover:bg-indigo-50 rounded-lg px-2 py-0.5 my-1 shadow-sm transition transform active:scale-95" onclick="speak('${safeText}')" title="點擊發音">🔊 ${match}</span>`;
                 });
                 
                 document.getElementById('feedback-text').innerHTML = formattedFeedback;
                 fbDiv.classList.remove('hidden');
-                // 將停留時間延長為 15 秒，讓使用者有時間點擊練習
                 setTimeout(() => { fbDiv.classList.add('hidden'); }, 15000); 
             } else { document.getElementById('chat-feedback').classList.add('hidden'); }
+            
             chatHistoryText += `User: ${userText}\nAI: ${data.reply}\n`;
         } catch (err) { appendChatMessage('ai', "抱歉，發生錯誤。"); } 
         finally { if(!isChatRecording) document.getElementById('chat-status').innerText = "點擊麥克風 / 或輸入文字"; }
@@ -474,7 +525,7 @@
     }
 
     // ==========================================
-    // 其餘卡片與功能邏輯 (維持不變)
+    // 其餘卡片與資料庫邏輯 (保持穩定版)
     // ==========================================
     function initShadowRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
