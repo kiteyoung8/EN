@@ -919,21 +919,39 @@
        startGen('generate', { topic, level:document.getElementById('input-level').value, len:document.getElementById('input-len-topic').value, scenario:document.getElementById('input-scenario').value });
     }
     function submitPaste() {
-       const txt=document.getElementById('input-content').value; if(!txt)return alert("請貼上文章");
-       document.getElementById('loading-msg').innerText = "🤖 AI 正在準備中..."; document.getElementById('loading-msg').classList.remove('hidden');
-       startGen('import', { title: document.getElementById('input-title').value, content:txt, len:document.getElementById('input-len-paste').value });
+       const txt = document.getElementById('input-content').value; 
+       if(!txt) return alert("請貼上文章");
+       
+       document.getElementById('loading-msg').innerText = "🤖 AI 正在準備中..."; 
+       document.getElementById('loading-msg').classList.remove('hidden');
+       
+       // ⚡ 修正：直接給定預設長度 'medium'，移除抓取不存在元件的程式碼
+       startGen('import', { 
+           title: document.getElementById('input-title').value, 
+           content: txt, 
+           len: 'medium' 
+       });
     }
 
     function startGen(act, data) {
         callApi(act, data).then(res => {
             document.getElementById('loading-msg').classList.add('hidden');
-            currentCards = res.data.cards.map(c => ({...c, shadowRewarded: false})); // 附加跟讀旗標
+            currentCards = res.data.cards.map(c => ({...c, shadowRewarded: false})); 
             currentIndex = 0;
-            currentArticleText = currentCards.map(c => c.english).join(' '); currentArticleChinese = currentCards.map(c => c.chinese).join('<br><br>');
-            currentArticleTitle = res.data.title || 'Lesson'; document.getElementById('card-main-title').innerText = currentArticleTitle;
-            document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-input').classList.remove('flex');
-            document.getElementById('view-cards').classList.remove('hidden'); document.getElementById('view-cards').classList.add('flex');
+            currentArticleText = currentCards.map(c => c.english).join(' '); 
+            currentArticleChinese = currentCards.map(c => c.chinese).join('<br><br>');
+            currentArticleTitle = res.data.title || 'Lesson'; 
+            document.getElementById('card-main-title').innerText = currentArticleTitle;
+            
+            document.getElementById('view-input').classList.add('hidden'); 
+            document.getElementById('view-input').classList.remove('flex');
+            document.getElementById('view-cards').classList.remove('hidden'); 
+            document.getElementById('view-cards').classList.add('flex');
             renderCard();
+        }).catch(err => {
+            // 🛡️ 加上防呆：如果後端或 AI 發生錯誤，把載入文字藏起來並報錯
+            document.getElementById('loading-msg').classList.add('hidden');
+            console.error(err);
         });
     }
 
