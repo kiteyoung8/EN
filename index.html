@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GemArticle - Ultimate AI Tutor</title>
+  <title>GemArticle - Ultimate AI Tutor & LinguaGarden</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   
@@ -87,21 +87,19 @@
         <button onclick="switchTab('paste')" id="tab-paste" class="text-gray-500 px-4 py-2 text-sm transition hover:text-indigo-400">📋 貼上</button>
       </div>
 
+      <!-- 🗣️ 朗讀設定 (高擬真語音清單) -->
       <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-200">
          <label class="block text-xs font-bold text-gray-500 uppercase mb-2">🗣️ 朗讀設定 (Voice Settings)</label>
-         <select id="input-voice" class="w-full bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm outline-none mb-3"></select>
+         <select id="input-voice" class="w-full bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm outline-none mb-3 font-bold text-indigo-700 cursor-pointer">
+             <option value="en-US-Journey-F">👩 優雅女聲 (Journey-F, 極度擬真)</option>
+             <option value="en-US-Journey-D">👨 沉穩男聲 (Journey-D, 極度擬真)</option>
+             <option value="en-US-Neural2-F">👩 清晰女聲 (Neural2-F, 適合教學)</option>
+             <option value="en-US-Neural2-J">👨 活力男聲 (Neural2-J, 適合教學)</option>
+         </select>
          <div class="flex justify-between items-center mb-1">
-             <label class="text-xs font-bold text-gray-400 uppercase">⚡ 速度: <span id="speed-val" class="text-indigo-600">0.9</span>x</label>
+             <label class="text-xs font-bold text-gray-400 uppercase">⚡ 速度: <span id="speed-val" class="text-indigo-600">1.0</span>x</label>
          </div>
-         <input type="range" id="input-rate" min="0.5" max="2" step="0.1" value="0.9" class="w-full accent-indigo-600 cursor-pointer mb-3">
-         <div class="flex justify-between items-center mb-1">
-             <label class="text-xs font-bold text-gray-400 uppercase">🎵 音調: <span id="pitch-val" class="text-indigo-600">0.9</span></label>
-         </div>
-         <div class="flex items-center gap-2">
-             <span class="text-xs text-gray-400">低沉</span>
-             <input type="range" id="input-pitch" min="0.5" max="1.5" step="0.1" value="0.9" class="w-full accent-indigo-600 cursor-pointer">
-             <span class="text-xs text-gray-400">高亢</span>
-         </div>
+         <input type="range" id="input-rate" min="0.5" max="2" step="0.1" value="1.0" class="w-full accent-indigo-600 cursor-pointer">
       </div>
 
       <!-- 生成模式表單 -->
@@ -348,9 +346,9 @@
 
               <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 text-center">
                   <div class="w-full bg-gray-200 rounded-full h-2">
-                      <div id="plant-progress-bar" class="bg-green-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                      <div id="plant-progress-bar" class="bg-yellow-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
                   </div>
-                  <p class="text-xl font-mono font-bold text-green-600 mt-2"><span id="plant-coins-status">0 / 0</span></p>
+                  <p class="text-xl font-mono font-bold text-yellow-500 mt-2"><span id="plant-coins-status">0 / 0</span></p>
               </div>
               <p id="plant-tips" class="text-xs text-gray-400 mt-4 leading-relaxed font-chn">每一句勇敢的練習，都是陽光與水滴。</p>
           </div>
@@ -385,17 +383,17 @@
 
     // 全局變數
     let currentCards = [], currentIndex = 0, isPlayingFull = false;
-    let voices = [], wordCache = {}; 
+    let wordCache = {}, currentAudio = null; 
     let currentPopupData = null, currentArticleText = "", currentArticleChinese = "", currentArticleTitle = "", currentUserId = ""; 
     let utteranceQueue = [];
-    const DEFAULT_RATE = 0.9, DEFAULT_PITCH = 0.9;
+    const DEFAULT_RATE = 1.0;
 
     let chatRecognition = null, isChatRecording = false, chatHistoryText = "";
     let currentSpeakScenario = "", currentSpeakMission = "";
     let shadowRecognition = null, isShadowRecording = false;
     let currentMicLang = 'en-US'; 
 
-    // 🌱 台灣原生植物圖鑑庫 (前端鏡像，用於顯示 emoji 與設定)
+    // 🌱 台灣原生植物圖鑑庫 (前端鏡像)
     const NATIVE_PLANT_DB = [
       { name: "黃花風鈴木", rarity: "Starter", emoji: "🌼", costToMax: 500 },
       { name: "馬鞍藤", rarity: "N", emoji: "🌱", costToMax: 100 },
@@ -414,49 +412,87 @@
         const savedUser = localStorage.getItem('gem_username');
         if (savedUser) {
             currentUserId = savedUser; document.getElementById('display-user').innerText = currentUserId;
-            await refreshUserStats();
+            await refreshUserStats(); // 登入時讀取金幣與植物狀態
             document.getElementById('view-login').classList.add('hidden');
             document.getElementById('view-input').classList.remove('hidden'); document.getElementById('view-input').classList.add('flex');
         } else { document.getElementById('view-login').classList.remove('hidden'); }
         
-        document.getElementById('input-rate').value = DEFAULT_RATE; document.getElementById('input-pitch').value = DEFAULT_PITCH;
-        loadVoices(); initSpeechRecognition(); initShadowRecognition(); 
+        document.getElementById('input-rate').value = DEFAULT_RATE;
+        initSpeechRecognition(); initShadowRecognition(); 
     }
 
     function handleLogin() {
         const nameInput = document.getElementById('login-username').value.trim();
         if (!nameInput) return alert("請輸入姓名");
         currentUserId = nameInput; localStorage.setItem('gem_username', currentUserId); 
-        init(); 
+        init();
     }
     function handleLogout() { localStorage.removeItem('gem_username'); location.reload(); }
     function getUserId() { if (!currentUserId) throw new Error("請先登入"); return currentUserId; }
 
-    function loadVoices() {
-      voices = window.speechSynthesis.getVoices();
-      const select = document.getElementById('input-voice'); select.innerHTML = '';
-      const engVoices = voices.filter(v => v.lang.startsWith('en'));
-      const listToShow = engVoices.length > 0 ? engVoices : voices;
-      listToShow.forEach((v) => { const option = document.createElement('option'); option.value = voices.indexOf(v); option.text = `${v.name} (${v.lang})`; select.appendChild(option); });
-      if(engVoices.length > 0) select.value = voices.indexOf(engVoices.find(v => v.lang === 'en-US') || engVoices[0]);
-    }
-    window.speechSynthesis.onvoiceschanged = loadVoices;
+    document.getElementById('input-rate').addEventListener('input', () => { document.getElementById('speed-val').innerText = document.getElementById('input-rate').value; });
 
-    function syncSettings(rateId, pitchId) {
-        document.getElementById('speed-val').innerText = document.getElementById(rateId).value;
-        document.getElementById('pitch-val').innerText = document.getElementById(pitchId).value;
-    }
-    document.getElementById('input-rate').addEventListener('input', () => syncSettings('input-rate', 'input-pitch'));
-    document.getElementById('input-pitch').addEventListener('input', () => syncSettings('input-rate', 'input-pitch'));
-    function speak(txt) { 
+    // ==========================================
+    // 🗣️ 真人發音引擎 (Google TTS)
+    // ==========================================
+    async function speak(txt) { 
+        if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
         window.speechSynthesis.cancel(); 
-        const u = new SpeechSynthesisUtterance(txt); u.lang = 'en-US'; 
-        u.rate = parseFloat(document.getElementById('input-rate').value) || 1;
-        u.pitch = parseFloat(document.getElementById('input-pitch').value) || 1;
-        const v = voices[document.getElementById('input-voice').value]; if(v) u.voice = v; 
-        window.speechSynthesis.speak(u); 
+        
+        const voice = document.getElementById('input-voice').value;
+        const rate = parseFloat(document.getElementById('input-rate').value) || 1.0;
+        
+        try {
+            const res = await callApi('tts', { text: txt, voice: voice });
+            if (res.status === 'success' && res.data.audioContent) {
+                currentAudio = new Audio("data:audio/mp3;base64," + res.data.audioContent);
+                currentAudio.playbackRate = rate; 
+                currentAudio.play();
+            }
+        } catch (e) {
+            console.error("真人發音失敗，切換為備用系統:", e);
+            const u = new SpeechSynthesisUtterance(txt); u.lang = 'en-US'; u.rate = rate; window.speechSynthesis.speak(u); 
+        }
     }
 
+    function playFullArticle() {
+        if(isPlayingFull){ stopFullAudio(); return; }
+        isPlayingFull = true; document.getElementById('btn-read-all').innerText='🛑 停止朗讀'; 
+        if (currentAudio) { currentAudio.pause(); } window.speechSynthesis.cancel();
+        utteranceQueue = (currentArticleTitle + ". " + currentArticleText).match(/[^.!?,\n]+[.!?,\n]+(\s|$)/g) || [currentArticleTitle + ". " + currentArticleText];
+        playQueue(0);
+    }
+
+    async function playQueue(index) {
+        if (!isPlayingFull || index >= utteranceQueue.length) { stopFullAudio(); return; }
+        const txt = utteranceQueue[index].trim(); if(!txt) { playQueue(index+1); return; }
+        
+        const voice = document.getElementById('input-voice').value;
+        const rate = parseFloat(document.getElementById('input-rate').value) || 1.0;
+
+        try {
+            const res = await callApi('tts', { text: txt, voice: voice });
+            if (res.status === 'success' && res.data.audioContent && isPlayingFull) {
+                currentAudio = new Audio("data:audio/mp3;base64," + res.data.audioContent);
+                currentAudio.playbackRate = rate;
+                currentAudio.onended = () => { if(isPlayingFull) setTimeout(() => { playQueue(index + 1); }, txt.match(/[.!?]$/) ? 800 : 300); };
+                currentAudio.play();
+            }
+        } catch(e) {
+            const u = new SpeechSynthesisUtterance(txt); u.lang = 'en-US'; u.rate = rate;
+            u.onend = function() { if(isPlayingFull) setTimeout(() => { playQueue(index + 1); }, 500); };
+            window.speechSynthesis.speak(u);
+        }
+    }
+
+    function stopFullAudio(){ 
+        isPlayingFull=false; if (currentAudio) currentAudio.pause(); window.speechSynthesis.cancel(); 
+        const btn = document.getElementById('btn-read-all'); if(btn) btn.innerText='🔊 全文朗讀'; 
+    }
+
+    // ==========================================
+    // API 呼叫包裝與畫面切換
+    // ==========================================
     async function callApi(action, params) {
       try {
         const res = await fetch(API_URL, { method: "POST", body: JSON.stringify({ action, ...params }) });
@@ -479,8 +515,10 @@
        document.getElementById('form-explore').classList.toggle('hidden', mode!=='explore');
        document.getElementById('form-speak').classList.toggle('hidden', mode!=='speak');
        document.getElementById('form-paste').classList.toggle('hidden', mode!=='paste');
+       
        const activeClass = 'border-b-2 border-indigo-600 text-indigo-600 font-bold px-4 py-2 text-sm transition';
        const inactiveClass = 'text-gray-500 px-4 py-2 text-sm transition hover:text-indigo-400';
+       
        document.getElementById('tab-topic').className = mode==='topic' ? activeClass : inactiveClass;
        document.getElementById('tab-explore').className = mode==='explore' ? activeClass : inactiveClass;
        document.getElementById('tab-speak').className = mode==='speak' ? activeClass : inactiveClass;
@@ -534,8 +572,9 @@
 
     function openPlantModal() { if(isPlayingFull) stopFullAudio(); document.getElementById('plant-modal').style.display = 'flex'; }
     function closePlantModal(e) { if (e && e.target.id !== 'plant-modal' && !e.target.closest('#plant-card') && e.target.tagName !== 'BUTTON') return; document.getElementById('plant-modal').style.display = 'none'; }
+    
     function triggerBloomCelebration(plantName) {
-        window.speechSynthesis.cancel();
+        window.speechSynthesis.cancel(); if (currentAudio) currentAudio.pause();
         const plantInfo = NATIVE_PLANT_DB.find(p => p.name === plantName) || { emoji: '🌼' };
         document.getElementById('bloom-emoji').innerText = `${plantInfo.emoji}${plantInfo.emoji}${plantInfo.emoji}`;
         const overlay = document.getElementById('bloom-overlay');
@@ -556,7 +595,6 @@
                 resultDiv.className = "text-sm font-bold text-green-600 mb-3 animate-bounce";
                 if (!userStats.unlockedPlants.includes(plant.name)) userStats.unlockedPlants.push(plant.name);
                 
-                // 詢問是否要換盆
                 if(confirm(`恭喜抽到 ${plant.name}！是否要將溫室的盆栽換成它？(進度將從種子重新開始)`)) {
                     const changeRes = await callApi('changePlant', { userId: getUserId(), plantName: plant.name });
                     if(changeRes.status === 'success') updateGardenUI(changeRes.data);
@@ -580,29 +618,46 @@
     }
 
     // ==========================================
-    // 🗣️ Speak Mode (RPG 任務引擎、雙語家教)
+    // 🗣️ Speak Mode (RPG 任務引擎、雙語家教與生字融入)
     // ==========================================
     function toggleCustomScenario() {
-        const select = document.getElementById('input-speak-scenario'); const customInput = document.getElementById('input-custom-scenario');
-        if (select.value === 'custom') { customInput.classList.remove('hidden'); customInput.focus(); } else { customInput.classList.add('hidden'); }
+        const select = document.getElementById('input-speak-scenario');
+        const customInput = document.getElementById('input-custom-scenario');
+        if (select.value === 'custom') { customInput.classList.remove('hidden'); customInput.focus(); } 
+        else { customInput.classList.add('hidden'); }
     }
+
     function toggleMicLang() {
         const icon = document.getElementById('mic-lang-icon');
-        if (currentMicLang === 'en-US') { currentMicLang = 'cmn-Hant-TW'; icon.innerText = '🇹🇼'; } else { currentMicLang = 'en-US'; icon.innerText = '🇺🇸'; }
+        if (currentMicLang === 'en-US') { currentMicLang = 'cmn-Hant-TW'; icon.innerText = '🇹🇼'; } 
+        else { currentMicLang = 'en-US'; icon.innerText = '🇺🇸'; }
         if (chatRecognition) chatRecognition.lang = currentMicLang;
     }
+
     async function sendChatText() {
-        const inputEl = document.getElementById('chat-text-input'); const text = inputEl.value.trim();
-        if (!text) return; inputEl.value = ''; appendChatMessage('user', text); await handleChatTurn(text);
+        const inputEl = document.getElementById('chat-text-input');
+        const text = inputEl.value.trim();
+        if (!text) return;
+        inputEl.value = ''; appendChatMessage('user', text); await handleChatTurn(text);
     }
     function handleChatKeyPress(e) { if (e.key === 'Enter') sendChatText(); }
 
     function initSpeechRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
-            chatRecognition = new SpeechRecognition(); chatRecognition.lang = currentMicLang; chatRecognition.continuous = false; chatRecognition.interimResults = false;
-            chatRecognition.onstart = () => { isChatRecording = true; document.getElementById('btn-chat-mic').classList.add('mic-active'); document.getElementById('chat-status').innerText = `聆聽中... (${currentMicLang === 'en-US' ? 'EN' : '中文'})`; document.getElementById('chat-status').classList.replace('text-gray-400', 'text-red-500'); };
-            chatRecognition.onresult = async (event) => { const text = event.results[0][0].transcript; appendChatMessage('user', text); await handleChatTurn(text); };
+            chatRecognition = new SpeechRecognition();
+            chatRecognition.lang = currentMicLang; 
+            chatRecognition.continuous = false; chatRecognition.interimResults = false;
+
+            chatRecognition.onstart = () => {
+                isChatRecording = true; document.getElementById('btn-chat-mic').classList.add('mic-active');
+                document.getElementById('chat-status').innerText = `聆聽中... (${currentMicLang === 'en-US' ? 'EN' : '中文'})`;
+                document.getElementById('chat-status').classList.replace('text-gray-400', 'text-red-500');
+            };
+            chatRecognition.onresult = async (event) => {
+                const text = event.results[0][0].transcript;
+                appendChatMessage('user', text); await handleChatTurn(text);
+            };
             chatRecognition.onerror = () => { stopChatMicUI(); document.getElementById('chat-status').innerText = "請再試一次"; };
             chatRecognition.onend = () => { stopChatMicUI(); };
         }
@@ -610,14 +665,18 @@
 
     async function initSpeakMode() {
         if(!chatRecognition) return alert("您的瀏覽器不支援語音功能。");
-        const scenarioSelect = document.getElementById('input-speak-scenario'); const difficultySelect = document.getElementById('input-speak-difficulty').value;
+        const scenarioSelect = document.getElementById('input-speak-scenario');
+        const difficultySelect = document.getElementById('input-speak-difficulty').value;
         let displayTitle = "", baseScenario = "";
         
         if (scenarioSelect.value === 'custom') {
-            const customVal = document.getElementById('input-custom-scenario').value.trim(); if (!customVal) return alert("請輸入自訂情境！");
-            baseScenario = customVal; displayTitle = "✍️ 自訂情境"; currentSpeakMission = "與對方建立友好的對話交流並成功結束話題";
+            const customVal = document.getElementById('input-custom-scenario').value.trim();
+            if (!customVal) return alert("請輸入自訂情境！");
+            baseScenario = customVal; displayTitle = "✍️ 自訂情境";
+            currentSpeakMission = "與對方建立友好的對話交流並成功結束話題";
         } else {
-            baseScenario = scenarioSelect.value; displayTitle = scenarioSelect.options[scenarioSelect.selectedIndex].text.split(' ')[0];
+            baseScenario = scenarioSelect.value; 
+            displayTitle = scenarioSelect.options[scenarioSelect.selectedIndex].text.split(' ')[0];
             if (baseScenario.includes("cafe")) {
                 if(difficultySelect === 'easy') currentSpeakMission = "向店員點一杯你想喝的飲料，並詢問總共多少錢。";
                 else if(difficultySelect === 'medium') currentSpeakMission = "向店員抱怨飲料做錯了(例如熱的做成冰的)，並要求對方重做一杯。";
@@ -641,9 +700,12 @@
         if(difficultySelect === 'medium') aiPersonality = "Be slightly hesitant or make a minor mistake that the user has to correct.";
         if(difficultySelect === 'hard') aiPersonality = "Be strict, skeptical, and uncooperative. Make it very difficult for the user to achieve their mission. Only yield if their argument is extremely convincing.";
         
-        document.getElementById('speak-scenario-title').innerText = displayTitle; document.getElementById('mission-text').innerText = currentSpeakMission;
-        document.getElementById('mission-banner').classList.remove('hidden'); document.getElementById('mission-vocab-area').classList.add('hidden'); 
-        const statusEl = document.getElementById('mission-status'); statusEl.innerText = "未完成"; statusEl.className = "text-xs font-bold text-gray-400 bg-white px-2 py-0.5 rounded border border-gray-200";
+        document.getElementById('speak-scenario-title').innerText = displayTitle;
+        document.getElementById('mission-text').innerText = currentSpeakMission;
+        document.getElementById('mission-banner').classList.remove('hidden');
+        document.getElementById('mission-vocab-area').classList.add('hidden'); 
+        const statusEl = document.getElementById('mission-status');
+        statusEl.innerText = "未完成"; statusEl.className = "text-xs font-bold text-gray-400 bg-white px-2 py-0.5 rounded border border-gray-200";
 
         chatHistoryText = ""; document.getElementById('chat-history').innerHTML = ""; document.getElementById('chat-feedback').classList.add('hidden');
         ['view-input', 'view-cards', 'view-review', 'view-wordbank', 'view-library'].forEach(id => { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); });
@@ -654,8 +716,10 @@
         try {
             const vRes = await callApi('getVocab', { userId: getUserId() });
             if (vRes.status === 'success' && vRes.data.length > 0) {
-                const shuffled = vRes.data.sort(() => 0.5 - Math.random()); const targetVocab = shuffled.slice(0, 3).map(v => v.word);
-                document.getElementById('mission-vocab-area').classList.remove('hidden'); document.getElementById('mission-vocab-list').innerHTML = targetVocab.map(w => `<span class="bg-white text-blue-600 px-2 py-0.5 rounded text-xs border border-blue-100 shadow-sm">${w}</span>`).join('');
+                const shuffled = vRes.data.sort(() => 0.5 - Math.random());
+                const targetVocab = shuffled.slice(0, 3).map(v => v.word);
+                document.getElementById('mission-vocab-area').classList.remove('hidden');
+                document.getElementById('mission-vocab-list').innerHTML = targetVocab.map(w => `<span class="bg-white text-blue-600 px-2 py-0.5 rounded text-xs border border-blue-100 shadow-sm">${w}</span>`).join('');
                 vocabInstruction = `\n\nSECRET TUTOR TASK: Please naturally weave at least one of these vocabulary words into your English replies to test the user: [${targetVocab.join(', ')}].`;
             }
         } catch(e) {}
@@ -666,15 +730,20 @@
         try {
             const res = await callApi('speak_mode', { userInput: "(Please start the conversation.)", history: "", scenario: currentSpeakScenario, mission: currentSpeakMission });
             appendChatMessage('ai', res.data.reply, res.data.reply_chn); speak(res.data.reply); chatHistoryText += `AI: ${res.data.reply}\n`;
-        } catch (err) { appendChatMessage('ai', "連線失敗，請重試。"); } finally { document.getElementById('chat-status').innerText = "點擊麥克風 / 或輸入文字"; }
+        } catch (err) { appendChatMessage('ai', "連線失敗，請重試。"); } 
+        finally { document.getElementById('chat-status').innerText = "點擊麥克風 / 或輸入文字"; }
     }
 
     function toggleChatMic() {
         if (!chatRecognition) return alert("瀏覽器不支援語音。");
-        if (isChatRecording) { chatRecognition.stop(); } else { window.speechSynthesis.cancel(); try { chatRecognition.start(); } catch(e) {} }
+        if (isChatRecording) { chatRecognition.stop(); } 
+        else { window.speechSynthesis.cancel(); try { chatRecognition.start(); } catch(e) {} }
     }
+
     function stopChatMicUI() {
-        isChatRecording = false; document.getElementById('btn-chat-mic').classList.remove('mic-active'); document.getElementById('chat-status').innerText = "點擊麥克風 / 或輸入文字"; document.getElementById('chat-status').classList.replace('text-red-500', 'text-gray-400');
+        isChatRecording = false; document.getElementById('btn-chat-mic').classList.remove('mic-active');
+        document.getElementById('chat-status').innerText = "點擊麥克風 / 或輸入文字";
+        document.getElementById('chat-status').classList.replace('text-red-500', 'text-gray-400');
     }
 
     async function handleChatTurn(userText) {
@@ -682,40 +751,68 @@
         try {
             const res = await callApi('speak_mode', { userInput: userText, history: chatHistoryText, scenario: currentSpeakScenario, mission: currentSpeakMission });
             const data = res.data;
+            
             if (data.mission_cleared === true) {
                 const statusEl = document.getElementById('mission-status');
                 if(statusEl.innerText !== "🎉 MISSION CLEARED") {
-                    statusEl.innerText = "🎉 MISSION CLEARED"; statusEl.className = "text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded border border-green-300 animate-pulse";
-                    data.feedback = "🏆 **太神啦！任務達成！**\n" + (data.feedback || "");
-                    await callApi('addCoins', { userId: getUserId(), amount: 50 }); refreshUserStats(); // 任務達成獎勵 50 幣
+                    statusEl.innerText = "🎉 MISSION CLEARED";
+                    statusEl.className = "text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded border border-green-300 animate-pulse";
+                    data.feedback = "🏆 **太神啦！任務達成！** (獲得 50 陽光幣獎勵)\n" + (data.feedback || "");
+                    
+                    // 任務達成獎勵 50 幣
+                    await callApi('addCoins', { userId: getUserId(), amount: 50 });
+                    refreshUserStats();
                 }
             }
+            
             appendChatMessage('ai', data.reply, data.reply_chn); speak(data.reply); 
+            
             if (data.feedback && data.feedback.trim() !== "" && !data.feedback.toLowerCase().includes("perfect")) {
                 const fbDiv = document.getElementById('chat-feedback');
-                const formattedFeedback = data.feedback.replace(/([a-zA-Z][a-zA-Z\s.,?!']{4,}[a-zA-Z.?!])/g, function(match) { const safeText = match.replace(/'/g, "\\'"); return `<span class="inline-block bg-white border border-indigo-200 text-indigo-700 font-bold cursor-pointer hover:bg-indigo-50 rounded-lg px-2 py-0.5 my-1 shadow-sm transition transform active:scale-95" onclick="speak('${safeText}')" title="點擊發音">🔊 ${match}</span>`; });
-                document.getElementById('feedback-text').innerHTML = formattedFeedback; fbDiv.classList.remove('hidden'); setTimeout(() => { fbDiv.classList.add('hidden'); }, 15000); 
+                const formattedFeedback = data.feedback.replace(/([a-zA-Z][a-zA-Z\s.,?!']{4,}[a-zA-Z.?!])/g, function(match) {
+                    const safeText = match.replace(/'/g, "\\'"); 
+                    return `<span class="inline-block bg-white border border-indigo-200 text-indigo-700 font-bold cursor-pointer hover:bg-indigo-50 rounded-lg px-2 py-0.5 my-1 shadow-sm transition transform active:scale-95" onclick="speak('${safeText}')" title="點擊發音">🔊 ${match}</span>`;
+                });
+                
+                document.getElementById('feedback-text').innerHTML = formattedFeedback;
+                fbDiv.classList.remove('hidden');
+                setTimeout(() => { fbDiv.classList.add('hidden'); }, 15000); 
             } else { document.getElementById('chat-feedback').classList.add('hidden'); }
+            
             chatHistoryText += `User: ${userText}\nAI: ${data.reply}\n`;
-        } catch (err) { appendChatMessage('ai', "抱歉，發生錯誤。"); } finally { if(!isChatRecording) document.getElementById('chat-status').innerText = "點擊麥克風 / 或輸入文字"; }
+        } catch (err) { appendChatMessage('ai', "抱歉，發生錯誤。"); } 
+        finally { if(!isChatRecording) document.getElementById('chat-status').innerText = "點擊麥克風 / 或輸入文字"; }
     }
 
     async function requestHint() {
-        if (isChatRecording) toggleChatMic(); appendChatMessage('user', "I don't know what to say... 🥺"); await handleChatTurn("(The user needs help. Provide 2-3 short examples of what they could say next.)");
+        if (isChatRecording) toggleChatMic(); 
+        appendChatMessage('user', "I don't know what to say... 🥺");
+        await handleChatTurn("(The user needs help. Provide 2-3 short examples of what they could say next.)");
     }
 
     function appendChatMessage(role, text, textChn = "") {
-        const chatBox = document.getElementById('chat-history'); const div = document.createElement('div');
+        const chatBox = document.getElementById('chat-history');
+        const div = document.createElement('div');
         div.style.opacity = '0'; div.style.transform = 'translateY(10px)'; div.style.transition = 'all 0.3s ease';
-        if (role === 'user') { div.className = "self-end bg-indigo-600 text-white p-3 rounded-2xl rounded-tr-none max-w-[85%] shadow"; div.innerHTML = `<p class="text-[15px]">${text}</p>`; } else {
-            div.className = "self-start bg-white border border-gray-200 text-gray-800 p-3 rounded-2xl rounded-tl-none max-w-[85%] shadow-sm relative"; const formattedText = text.replace(/\n/g, '<br>');
-            div.innerHTML = `<button onclick="speak('${text.replace(/'/g, "\\'").replace(/\n/g, ' ')}')" class="absolute -left-2 -top-2 bg-indigo-100 text-indigo-700 rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-sm z-10">🔊</button><p class="text-[15px] font-eng ml-2 leading-relaxed">${formattedText}</p>${textChn ? `<p class="text-xs text-gray-400 font-chn mt-3 border-t border-gray-100 pt-2 ml-2 leading-relaxed">${textChn.replace(/\n/g, '<br>')}</p>` : ''}`;
+
+        if (role === 'user') {
+            div.className = "self-end bg-indigo-600 text-white p-3 rounded-2xl rounded-tr-none max-w-[85%] shadow";
+            div.innerHTML = `<p class="text-[15px]">${text}</p>`;
+        } else {
+            div.className = "self-start bg-white border border-gray-200 text-gray-800 p-3 rounded-2xl rounded-tl-none max-w-[85%] shadow-sm relative";
+            const formattedText = text.replace(/\n/g, '<br>');
+            div.innerHTML = `
+                <button onclick="speak('${text.replace(/'/g, "\\'").replace(/\n/g, ' ')}')" class="absolute -left-2 -top-2 bg-indigo-100 text-indigo-700 rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-sm z-10">🔊</button>
+                <p class="text-[15px] font-eng ml-2 leading-relaxed">${formattedText}</p>
+                ${textChn ? `<p class="text-xs text-gray-400 font-chn mt-3 border-t border-gray-100 pt-2 ml-2 leading-relaxed">${textChn.replace(/\n/g, '<br>')}</p>` : ''}
+            `;
         }
-        chatBox.appendChild(div); setTimeout(() => { div.style.opacity = '1'; div.style.transform = 'translateY(0)'; chatBox.scrollTop = chatBox.scrollHeight; }, 50);
+        chatBox.appendChild(div);
+        setTimeout(() => { div.style.opacity = '1'; div.style.transform = 'translateY(0)'; chatBox.scrollTop = chatBox.scrollHeight; }, 50);
     }
 
     // ==========================================
-    // 發音跟讀 (Shadowing) 與 文章生成
+    // 發音跟讀 (Shadowing)
     // ==========================================
     function initShadowRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -727,22 +824,37 @@
             shadowRecognition.onend = () => { isShadowRecording = false; document.getElementById('btn-card-mic').classList.remove('mic-active'); };
         }
     }
-    function toggleCardShadowing(e) { e.stopPropagation(); if (!shadowRecognition) return alert("瀏覽器不支援。"); if (isShadowRecording) shadowRecognition.stop(); else { window.speechSynthesis.cancel(); try { shadowRecognition.start(); } catch(e) {} } }
-    
+    function toggleCardShadowing(e) {
+        e.stopPropagation(); if (!shadowRecognition) return alert("瀏覽器不支援。");
+        if (isShadowRecording) shadowRecognition.stop(); else { window.speechSynthesis.cancel(); try { shadowRecognition.start(); } catch(e) {} }
+    }
     function checkPronunciation(userText) {
-        const targetText = currentCards[currentIndex].english; const cleanTarget = targetText.toLowerCase().replace(/[^\w\s']/g, '').trim().split(/\s+/); const cleanUser = userText.toLowerCase().replace(/[^\w\s']/g, '').trim().split(/\s+/);
+        const targetText = currentCards[currentIndex].english;
+        const cleanTarget = targetText.toLowerCase().replace(/[^\w\s']/g, '').trim().split(/\s+/);
+        const cleanUser = userText.toLowerCase().replace(/[^\w\s']/g, '').trim().split(/\s+/);
         let matchCount = 0; let targetWordsMatched = new Set();
-        const coloredUserText = cleanUser.map((uWord) => { const matchIdx = cleanTarget.findIndex((tWord, i) => tWord === uWord && !targetWordsMatched.has(i)); if (matchIdx !== -1) { matchCount++; targetWordsMatched.add(matchIdx); return `<span class="text-green-400 font-bold">${uWord}</span>`; } else { return `<span class="text-red-400 line-through opacity-80">${uWord}</span>`; } }).join(' ');
+        const coloredUserText = cleanUser.map((uWord) => {
+            const matchIdx = cleanTarget.findIndex((tWord, i) => tWord === uWord && !targetWordsMatched.has(i));
+            if (matchIdx !== -1) { matchCount++; targetWordsMatched.add(matchIdx); return `<span class="text-green-400 font-bold">${uWord}</span>`; } 
+            else { return `<span class="text-red-400 line-through opacity-80">${uWord}</span>`; }
+        }).join(' ');
         const score = Math.round((matchCount / Math.max(cleanTarget.length, 1)) * 100); const cappedScore = Math.min(score, 100);
-        document.getElementById('shadowing-result').innerHTML = coloredUserText || "未聽清楚"; const scoreEl = document.getElementById('shadowing-score'); scoreEl.innerText = cappedScore + "%";
-        if (cappedScore >= 80) scoreEl.className = "font-bold text-sm text-green-400"; else if (cappedScore >= 50) scoreEl.className = "font-bold text-sm text-yellow-400"; else scoreEl.className = "font-bold text-sm text-red-400";
+        document.getElementById('shadowing-result').innerHTML = coloredUserText || "未聽清楚";
+        const scoreEl = document.getElementById('shadowing-score'); scoreEl.innerText = cappedScore + "%";
+        if (cappedScore >= 80) scoreEl.className = "font-bold text-sm text-green-400";
+        else if (cappedScore >= 50) scoreEl.className = "font-bold text-sm text-yellow-400";
+        else scoreEl.className = "font-bold text-sm text-red-400";
     }
 
+    // 聯網與生成
     function submitExplore() {
-       const query = document.getElementById('input-explore-query').value.trim(); if(!query) return alert("請輸入想要聯網搜尋的關鍵字");
-       document.getElementById('loading-msg').innerText = "🌐 AI 正在網路上為您蒐集並提煉資料..."; document.getElementById('loading-msg').classList.remove('hidden');
+       const query = document.getElementById('input-explore-query').value.trim(); 
+       if(!query) return alert("請輸入想要聯網搜尋的關鍵字");
+       document.getElementById('loading-msg').innerText = "🌐 AI 正在網路上為您蒐集並提煉資料..."; 
+       document.getElementById('loading-msg').classList.remove('hidden');
        startGen('search_web', { query: query, level: document.getElementById('input-explore-level').value });
     }
+
     function submitTopic() {
        const topic=document.getElementById('input-topic').value; if(!topic)return alert("請輸入主題");
        document.getElementById('loading-msg').innerText = "🤖 AI 正在準備中..."; document.getElementById('loading-msg').classList.remove('hidden');
@@ -756,10 +868,13 @@
 
     function startGen(act, data) {
         callApi(act, data).then(res => {
-            document.getElementById('loading-msg').classList.add('hidden'); currentCards = res.data.cards; currentIndex = 0;
+            document.getElementById('loading-msg').classList.add('hidden');
+            currentCards = res.data.cards; currentIndex = 0;
             currentArticleText = currentCards.map(c => c.english).join(' '); currentArticleChinese = currentCards.map(c => c.chinese).join('<br><br>');
             currentArticleTitle = res.data.title || 'Lesson'; document.getElementById('card-main-title').innerText = currentArticleTitle;
-            document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-input').classList.remove('flex'); document.getElementById('view-cards').classList.remove('hidden'); document.getElementById('view-cards').classList.add('flex'); renderCard();
+            document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-input').classList.remove('flex');
+            document.getElementById('view-cards').classList.remove('hidden'); document.getElementById('view-cards').classList.add('flex');
+            renderCard();
         });
     }
 
@@ -779,12 +894,18 @@
     function prevCard(){ if(currentIndex>0){currentIndex--; renderCard();} }
     function speakTarget(e){ e.stopPropagation(); speak(currentCards[currentIndex].english); }
 
+    // 全文閱讀與彈出翻譯
     function showReviewPage(isFromLibrary = false) {
-        document.getElementById('view-cards').classList.add('hidden'); document.getElementById('view-cards').classList.remove('flex'); const view = document.getElementById('view-review'); view.classList.remove('hidden'); view.classList.add('flex');
+        document.getElementById('view-cards').classList.add('hidden'); document.getElementById('view-cards').classList.remove('flex');
+        const view = document.getElementById('view-review'); view.classList.remove('hidden'); view.classList.add('flex');
         const saveBtn = document.getElementById('btn-save-article');
-        if(isFromLibrary) { saveBtn.innerHTML = "📂 已收藏"; saveBtn.disabled = true; saveBtn.classList.add('text-gray-400'); } else { saveBtn.innerHTML = "💾 儲存"; saveBtn.disabled = false; saveBtn.classList.remove('text-gray-400'); }
+        if(isFromLibrary) { saveBtn.innerHTML = "📂 已收藏"; saveBtn.disabled = true; saveBtn.classList.add('text-gray-400'); } 
+        else { saveBtn.innerHTML = "💾 儲存"; saveBtn.disabled = false; saveBtn.classList.remove('text-gray-400'); }
         document.getElementById('review-title').innerText = currentArticleTitle;
-        document.getElementById('review-content').innerHTML = currentArticleText.split(/(\s+)/).map(w => { if(w.trim().length === 0) return w; const rawWord = w.replace(/[^\w']/g, ""); if(!rawWord) return w; return `<span class="clickable-word" onclick="handleWordClick('${rawWord}', this)">${w}</span>`; }).join('');
+        document.getElementById('review-content').innerHTML = currentArticleText.split(/(\s+)/).map(w => {
+            if(w.trim().length === 0) return w; const rawWord = w.replace(/[^\w']/g, ""); 
+            if(!rawWord) return w; return `<span class="clickable-word" onclick="handleWordClick('${rawWord}', this)">${w}</span>`;
+        }).join('');
         document.getElementById('review-content-chn').innerHTML = currentArticleChinese || "(暫無翻譯)";
     }
     function saveCurrentArticle() {
@@ -794,12 +915,15 @@
 
     async function handleWordClick(word, el) {
         speak(word); const popup = document.getElementById('word-popup'); const rect = el.getBoundingClientRect(); const parentRect = document.getElementById('view-review').getBoundingClientRect();
-        let top = rect.top - parentRect.top - popup.offsetHeight - 10; if(top < 0) top = rect.bottom - parentRect.top + 10; popup.style.top = `${top}px`; popup.style.left = `${rect.left - parentRect.left}px`; popup.style.display = 'block';
+        let top = rect.top - parentRect.top - popup.offsetHeight - 10; if(top < 0) top = rect.bottom - parentRect.top + 10;
+        popup.style.top = `${top}px`; popup.style.left = `${rect.left - parentRect.left}px`; popup.style.display = 'block';
         document.getElementById('popup-word').innerText = word; document.getElementById('popup-ipa').innerText = "..."; document.getElementById('popup-def').innerText = "Translating...";
-        let startIdx = Math.max(0, currentArticleText.indexOf(word) - 50); let endIdx = Math.min(currentArticleText.length, currentArticleText.indexOf(word) + word.length + 50); let contextSnippet = currentArticleText.substring(startIdx, endIdx).trim();
+        let startIdx = Math.max(0, currentArticleText.indexOf(word) - 50); let endIdx = Math.min(currentArticleText.length, currentArticleText.indexOf(word) + word.length + 50);
+        let contextSnippet = currentArticleText.substring(startIdx, endIdx).trim();
         const sentences = currentArticleText.match(/[^\.!\?]+[\.!\?]+/g) || [currentArticleText]; const exactSentence = sentences.find(s => s.includes(word)) || contextSnippet;
         currentPopupData = { word: word, context: exactSentence.trim() }; 
-        if (wordCache[word]) updatePopup(wordCache[word]); else { try { const res = await callApi('translate', { word: word, context: currentPopupData.context }); if(res.status === 'success') { wordCache[word] = res.data; updatePopup(res.data); } else { document.getElementById('popup-def').innerText = "Translation not found."; } } catch(e) { document.getElementById('popup-def').innerText = "Error loading."; } }
+        if (wordCache[word]) updatePopup(wordCache[word]);
+        else { try { const res = await callApi('translate', { word: word, context: currentPopupData.context }); if(res.status === 'success') { wordCache[word] = res.data; updatePopup(res.data); } else { document.getElementById('popup-def').innerText = "Translation not found."; } } catch(e) { document.getElementById('popup-def').innerText = "Error loading."; } }
     }
     function updatePopup(data) { document.getElementById('popup-ipa').innerText = data.ipa || ''; document.getElementById('popup-def').innerText = data.def; currentPopupData = { ...currentPopupData, ...data }; }
     function closePopup() { document.getElementById('word-popup').style.display = 'none'; }
@@ -817,6 +941,7 @@
     }
     document.addEventListener('click', function(e) { const popup = document.getElementById('word-popup'); if (popup.style.display === 'block' && !popup.contains(e.target) && !e.target.classList.contains('clickable-word')) closePopup(); });
 
+    // 文章庫與生字本
     function openLibrary() { document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-input').classList.remove('flex'); document.getElementById('view-library').classList.remove('hidden'); document.getElementById('view-library').classList.add('flex'); loadLibrary(); }
     function openWordBank() { document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-input').classList.remove('flex'); document.getElementById('view-wordbank').classList.remove('hidden'); document.getElementById('view-wordbank').classList.add('flex'); loadWordBank(); }
     
@@ -847,21 +972,6 @@
         } catch(e) { console.error("儲存失敗", e); }
     }
     function delWord(id,btn){ if(confirm("確定刪除?")) callApi('delVocab',{userId:getUserId(),id}).then(()=>btn.closest('div.bg-gray-50').remove()); }
-
-    function playFullArticle() {
-        if(isPlayingFull){ stopFullAudio(); return; }
-        isPlayingFull = true; document.getElementById('btn-read-all').innerText='🛑 停止朗讀'; 
-        window.speechSynthesis.cancel(); utteranceQueue = (currentArticleTitle + ". " + currentArticleText).match(/[^.!?,\n]+[.!?,\n]+(\s|$)/g) || [currentArticleTitle + ". " + currentArticleText]; playQueue(0);
-    }
-    function playQueue(index) {
-        if (!isPlayingFull || index >= utteranceQueue.length) { stopFullAudio(); return; }
-        const txt = utteranceQueue[index].trim(); if(!txt) { playQueue(index+1); return; }
-        const u = new SpeechSynthesisUtterance(txt); u.lang = 'en-US'; u.rate = parseFloat(document.getElementById('input-rate').value); u.pitch = parseFloat(document.getElementById('input-pitch').value);
-        const v = voices[document.getElementById('input-voice').value]; if(v)u.voice=v;
-        u.onend = function() { if(isPlayingFull) setTimeout(() => { playQueue(index + 1); }, txt.match(/[.!?]$/) ? 800 : 300); };
-        window.speechSynthesis.speak(u);
-    }
-    function stopFullAudio(){ window.speechSynthesis.cancel(); isPlayingFull=false; const btn = document.getElementById('btn-read-all'); if(btn) btn.innerText='🔊 全文朗讀'; }
 
     init();
   </script>
