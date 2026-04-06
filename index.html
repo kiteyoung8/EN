@@ -1,322 +1,869 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formosa LinguaGarden 雙語家教</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Nunito:wght@400;700&display=swap');
-        body { font-family: 'Nunito', 'Noto Sans TC', sans-serif; background-color: #f3f4f6; }
-        
-        /* 像素風樣式與溫室系統 */
-        .pixel-art { image-rendering: pixelated; image-rendering: crisp-edges; }
-        
-        #coin-display {
-            position: absolute; top: 16px; left: 16px;
-            background: rgba(255, 255, 255, 0.95); border: 2px solid #fcd34d;
-            padding: 6px 14px; border-radius: 99px;
-            font-family: monospace; font-size: 16px; font-weight: bold;
-            color: #d97706; display: flex; align-items: center; gap: 6px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); z-index: 10;
-            transition: transform 0.2s;
-        }
-        
-        #plant-pot-btn {
-            position: fixed; bottom: 24px; right: 24px;
-            width: 64px; height: 64px; background: white;
-            border-radius: 50%; border: 3px solid #bfdbfe;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; z-index: 40; transition: transform 0.2s;
-        }
-        #plant-pot-btn:hover { transform: scale(1.1) rotate(5deg); }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GemArticle - Ultimate AI Tutor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    .font-eng { font-family: 'Merriweather', serif; }
+    .font-chn { font-family: 'Noto Sans TC', sans-serif; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #c7c7c7; border-radius: 4px; }
+    
+    .perspective-1000 { perspective: 1000px; }
+    .transform-style-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; }
+    .rotate-y-180 { transform: rotateY(180deg); }
+    .group.flipped .content-box { transform: rotateY(180deg); }
 
-        #plant-modal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-            display: none; align-items: center; justify-content: center;
-            z-index: 100;
-        }
-        #plant-card {
-            background: white; width: 90%; max-width: 340px;
-            border-radius: 24px; padding: 32px 24px; text-align: center;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); position: relative;
-        }
-        #plant-visual-container { height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
-        
-        #bloom-overlay {
-            position: fixed; inset: 0; background: rgba(255, 255, 255, 0.9);
-            z-index: 200; display: none; align-items: center; justify-content: center;
-            flex-direction: column; animation: fadeInOut 3s forwards;
-        }
-        @keyframes fadeInOut { 0% { opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
+    .clickable-word { cursor: pointer; padding: 2px 0; border-radius: 4px; transition: background-color 0.2s, color 0.2s; }
+    .clickable-word:hover { background-color: #e0e7ff; color: #4338ca; text-decoration: underline; }
+    
+    #word-popup {
+        position: absolute; z-index: 50; background: white; border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e5e7eb; padding: 12px; min-width: 220px; max-width: 300px; display: none;
+        animation: popup-fade 0.2s ease-out;
+    }
+    @keyframes popup-fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    #word-popup::after {
+        content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%) rotate(45deg);
+        width: 12px; height: 12px; background: white; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;
+    }
 
-        /* 字卡樣式 */
-        .card-container { perspective: 1000px; cursor: pointer; margin-bottom: 1rem; }
-        .card { width: 100%; transition: transform 0.6s; transform-style: preserve-3d; position: relative; min-height: 120px; }
-        .card.flipped { transform: rotateY(180deg); }
-        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; padding: 1.5rem; border-radius: 1rem; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
-        .card-back { transform: rotateY(180deg); background: #f8fafc; }
-    </style>
+    @keyframes pulse-ring {
+        0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+        70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(99, 102, 241, 0); }
+        100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+    }
+    .mic-active { animation: pulse-ring 1.5s infinite; background-color: #ef4444 !important; }
+
+    /* 🌱 像素風園藝系統專用樣式 */
+    .pixel-art { image-rendering: pixelated; image-rendering: crisp-edges; }
+    #plant-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 100; animation: fadeIn 0.3s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    #bloom-overlay { position: fixed; inset: 0; background: rgba(255, 255, 255, 0.9); z-index: 200; display: none; align-items: center; justify-content: center; flex-direction: column; animation: fadeInOut 3s forwards; }
+    @keyframes fadeInOut { 0% { opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+  </style>
 </head>
-<body class="text-gray-800 min-h-screen p-4 md:p-8">
+<body class="bg-gray-100 h-screen flex flex-col items-center justify-center font-sans overflow-hidden">
 
-    <!-- 頂部金幣顯示 -->
-    <div id="coin-display" class="hidden">
-        <span class="pixel-art text-xl">🌞</span> <span id="user-coins">0</span>
+  <!-- 1. 登入畫面 -->
+  <div id="view-login" class="fixed inset-0 bg-gray-900 bg-opacity-90 z-50 flex flex-col items-center justify-center p-6">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
+        <h1 class="text-2xl font-bold text-indigo-700 mb-2">👋 歡迎回來</h1>
+        <p class="text-gray-500 text-sm mb-6">請輸入姓名以同步您的學習資料</p>
+        <input type="text" id="login-username" class="w-full px-4 py-3 border border-gray-300 rounded-xl mb-4 text-center text-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="例如: Jason99">
+        <button onclick="handleLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95">🚀 進入系統</button>
     </div>
+  </div>
 
-    <!-- 登入畫面 -->
-    <div id="view-login" class="max-w-md mx-auto bg-white rounded-3xl shadow-xl p-8 text-center mt-20">
-        <div class="text-6xl mb-4 pixel-art">🪴</div>
-        <h1 class="text-2xl font-bold mb-2 text-indigo-600">Formosa LinguaGarden</h1>
-        <p class="text-gray-500 mb-6">種下語言的種子，灌溉你的數位花園</p>
-        <input type="text" id="username-input" placeholder="請輸入你的名字" class="w-full p-3 border rounded-xl mb-4 text-center focus:outline-none focus:ring-2 focus:ring-indigo-400">
-        <button onclick="login()" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition">開始培育</button>
+  <!-- 2. 主選單畫面 -->
+  <div id="view-input" class="hidden w-full max-w-lg p-6 transition-all duration-300 h-full flex-col justify-center">
+    <div class="bg-white rounded-3xl shadow-xl p-8 relative overflow-y-auto custom-scroll max-h-[90vh]">
+      <div class="absolute top-4 right-4 flex gap-2">
+        <button onclick="openLibrary()" class="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full transition" title="我的文章庫"><span class="text-xl">📂</span></button>
+        <button onclick="openWordBank()" class="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full transition" title="我的生字本"><span class="text-xl">📚</span></button>
+      </div>
+      
+      <!-- 頂部資訊區 (加入金幣顯示) -->
+      <div class="absolute top-4 left-4 flex gap-2 items-center flex-wrap">
+        <span id="display-user" class="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">Guest</span>
+        <button onclick="handleLogout()" class="text-xs text-red-400 hover:underline">登出</button>
+        <div id="coin-display" class="hidden flex items-center gap-1 bg-white border border-yellow-200 px-3 py-1 rounded-full text-xs font-bold text-yellow-500 shadow-sm ml-1 transition-all">
+          <span class="pixel-art text-sm">🌞</span> <span id="user-coins">0</span>
+        </div>
+      </div>
+
+      <!-- 四大功能頁籤 -->
+      <div class="flex justify-center mt-10 mb-6 border-b border-gray-200">
+        <button onclick="switchTab('topic')" id="tab-topic" class="border-b-2 border-indigo-600 text-indigo-600 font-bold px-4 py-2 text-sm transition">✨ 生成</button>
+        <button onclick="switchTab('explore')" id="tab-explore" class="text-gray-500 px-4 py-2 text-sm transition hover:text-indigo-400">🌐 聯網</button>
+        <button onclick="switchTab('speak')" id="tab-speak" class="text-gray-500 px-4 py-2 text-sm transition hover:text-indigo-400">🗣️ 口說</button>
+        <button onclick="switchTab('paste')" id="tab-paste" class="text-gray-500 px-4 py-2 text-sm transition hover:text-indigo-400">📋 貼上</button>
+      </div>
+
+      <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-200">
+         <label class="block text-xs font-bold text-gray-500 uppercase mb-2">🗣️ 朗讀設定 (Voice Settings)</label>
+         <select id="input-voice" class="w-full bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm outline-none mb-3"></select>
+         <div class="flex justify-between items-center mb-1">
+             <label class="text-xs font-bold text-gray-400 uppercase">⚡ 速度: <span id="speed-val" class="text-indigo-600">0.9</span>x</label>
+         </div>
+         <input type="range" id="input-rate" min="0.5" max="2" step="0.1" value="0.9" class="w-full accent-indigo-600 cursor-pointer mb-3">
+         <div class="flex justify-between items-center mb-1">
+             <label class="text-xs font-bold text-gray-400 uppercase">🎵 音調: <span id="pitch-val" class="text-indigo-600">0.9</span></label>
+         </div>
+         <div class="flex items-center gap-2">
+             <span class="text-xs text-gray-400">低沉</span>
+             <input type="range" id="input-pitch" min="0.5" max="1.5" step="0.1" value="0.9" class="w-full accent-indigo-600 cursor-pointer">
+             <span class="text-xs text-gray-400">高亢</span>
+         </div>
+      </div>
+
+      <!-- 生成模式表單 -->
+      <div id="form-topic" class="block">
+        <input type="text" id="input-topic" class="w-full mb-4 px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" placeholder="輸入主題 (Topic) - e.g., 旅遊, AI...">
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <select id="input-scenario" class="px-3 py-3 border rounded-xl bg-white text-sm text-indigo-700 font-semibold">
+            <option value="article">📘 短文 (Article)</option>
+            <option value="conversation">💬 對話 (Dialogue)</option>
+          </select>
+          <select id="input-len-topic" class="px-3 py-3 border rounded-xl bg-white text-sm">
+            <option value="medium">標準長度 (Standard)</option>
+            <option value="short">短篇 (Short)</option>
+          </select>
+        </div>
+        <select id="input-level" class="w-full mb-6 px-3 py-3 border rounded-xl bg-white text-sm">
+            <option value="elementary">初級 (Elementary)</option>
+            <option value="high" selected>高中 (High School)</option>
+            <option value="adult">專業 (Professional)</option>
+        </select>
+        <button onclick="submitTopic()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition">✨ 開始學習</button>
+      </div>
+
+      <!-- 🌐 聯網探索模式表單 -->
+      <div id="form-explore" class="hidden">
+        <p class="text-sm text-gray-600 mb-4 text-center">輸入感興趣的時事或知識，AI 將即時上網搜尋並為您特製學習講義！</p>
+        <input type="text" id="input-explore-query" class="w-full mb-4 px-4 py-3 border-2 border-blue-200 rounded-xl outline-none focus:border-blue-500 shadow-sm" placeholder="例如：SpaceX 最新發射、蘋果秋季發表會...">
+        <select id="input-explore-level" class="w-full mb-6 px-3 py-3 border rounded-xl bg-white text-sm">
+            <option value="elementary">初級 (Elementary)</option>
+            <option value="high" selected>高中 (High School)</option>
+            <option value="adult">專業 (Professional)</option>
+        </select>
+        <button onclick="submitExplore()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition">🔍 聯網搜尋並產生教材</button>
+      </div>
+
+      <!-- 🎮 口說 RPG 模式表單 -->
+      <div id="form-speak" class="hidden">
+        <p class="text-sm text-gray-600 mb-4 text-center">選擇情境與難度，AI 將扮演對應角色與您互動！</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <select id="input-speak-scenario" onchange="toggleCustomScenario()" class="w-full px-4 py-4 border-2 border-indigo-100 rounded-xl bg-white text-sm text-indigo-800 font-bold outline-none focus:border-indigo-500 shadow-sm cursor-pointer">
+                <option value="Casual conversation at a cafe">☕ 咖啡廳 (Cafe)</option>
+                <option value="Passing immigration and customs at the airport">🛂 機場海關 (Customs)</option>
+                <option value="Ordering food at a fast food restaurant">🍔 餐廳點餐 (Restaurant)</option>
+                <option value="Job Interview for a software engineer">💼 英文面試 (Interview)</option>
+                <option value="custom">✍️ 自訂情境</option>
+            </select>
+            <select id="input-speak-difficulty" class="w-full px-4 py-4 border-2 border-indigo-100 rounded-xl bg-white text-sm font-bold outline-none focus:border-indigo-500 shadow-sm cursor-pointer">
+                <option value="easy">🟢 簡單 (日常順暢對話)</option>
+                <option value="medium">🟡 中等 (處理突發狀況)</option>
+                <option value="hard">🔴 困難 (極限交涉說服)</option>
+            </select>
+        </div>
+        <input type="text" id="input-custom-scenario" class="hidden w-full mb-6 px-4 py-3 border-2 border-indigo-100 rounded-xl outline-none focus:border-indigo-500 shadow-sm transition-all" placeholder="請輸入英文情境 (例如: Checking in at a hotel)">
+        <button onclick="initSpeakMode()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition">🎙️ 開始對話</button>
+      </div>
+
+      <!-- 貼上模式表單 -->
+      <div id="form-paste" class="hidden">
+        <input type="text" id="input-title" class="w-full mb-3 px-4 py-3 border rounded-xl outline-none" placeholder="文章標題 (Title)">
+        <textarea id="input-content" rows="4" class="w-full mb-4 px-4 py-3 border rounded-xl outline-none" placeholder="在此貼上英文文章..."></textarea>
+        <button onclick="submitPaste()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-xl shadow-lg transition">🚀 開始分析</button>
+      </div>
+      
+      <p id="loading-msg" class="hidden mt-6 text-center text-indigo-600 text-sm font-semibold animate-pulse">🤖 AI 正在處理中 (Processing)...</p>
     </div>
+  </div>
 
-    <!-- 主控台畫面 -->
-    <div id="view-main" class="max-w-3xl mx-auto hidden flex-col gap-6">
-        
-        <div class="bg-white rounded-3xl shadow-sm p-6 relative">
-            <div class="text-right text-sm text-gray-400 mb-4">歡迎, <span id="display-user" class="font-bold text-indigo-500"></span></div>
-            
-            <h2 class="text-xl font-bold mb-4"><i class="fa-solid fa-wand-magic-sparkles text-indigo-500 mr-2"></i>生成學習任務</h2>
-            <div class="flex flex-col gap-4">
-                <input type="text" id="topic-input" placeholder="想學習什麼主題？ (例如：環保、科技新聞、點餐)" class="w-full p-3 border rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-300">
-                <div class="flex gap-2">
-                    <select id="level-select" class="flex-1 p-3 border rounded-xl bg-gray-50 text-sm">
-                        <option value="A1 Beginner">入門 (A1)</option>
-                        <option value="B1 Intermediate" selected>中級 (B1)</option>
-                        <option value="C1 Advanced">進階 (C1)</option>
-                    </select>
-                    <button onclick="generateContent()" class="flex-2 bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-indigo-700 transition shadow-md">生成講義</button>
+  <!-- 3. 口說對話介面 -->
+  <div id="view-speak" class="hidden w-full max-w-lg p-4 h-full flex-col justify-center relative">
+     <div class="bg-white rounded-3xl shadow-2xl flex flex-col h-[85vh] border border-gray-100 overflow-hidden relative">
+         <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-white shadow-sm z-10">
+            <button onclick="goBackToMenu()" class="text-gray-500 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-bold transition">🏠 離開</button>
+            <h2 class="text-sm font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full" id="speak-scenario-title">Scenario</h2>
+         </div>
+         
+         <div id="mission-banner" class="bg-blue-50 border-l-4 border-blue-500 p-3 mx-4 mt-4 rounded shadow-sm hidden z-10 relative transition-all">
+            <div class="flex justify-between items-start">
+                <p class="text-xs text-blue-500 font-bold uppercase mb-1 flex items-center gap-1"><span class="animate-bounce">🎯</span> 本場任務 (Mission)</p>
+                <span id="mission-status" class="text-xs font-bold text-gray-400 bg-white px-2 py-0.5 rounded border border-gray-200">未完成</span>
+            </div>
+            <p id="mission-text" class="text-sm text-blue-800 font-bold">任務內容載入中...</p>
+            <div id="mission-vocab-area" class="hidden border-t border-blue-200 pt-2 mt-2">
+                <p class="text-[10px] text-blue-400 font-bold mb-1">✨ AI 老師將會試著在對話中使用以下生字：</p>
+                <div id="mission-vocab-list" class="flex gap-2 flex-wrap"></div>
+            </div>
+         </div>
+         
+         <div id="chat-history" class="flex-grow p-4 overflow-y-auto custom-scroll bg-slate-50 flex flex-col gap-4 pb-20"></div>
+         
+         <div id="chat-feedback" class="absolute top-16 left-4 right-4 bg-yellow-100/95 backdrop-blur-sm border border-yellow-300 text-yellow-800 p-4 rounded-xl shadow-lg hidden transform transition-all text-sm z-20 flex flex-col gap-2">
+            <div class="flex justify-between items-start">
+                <strong>💡 老師建議：</strong>
+                <button onclick="document.getElementById('chat-feedback').classList.add('hidden')" class="text-yellow-600 hover:text-yellow-800 font-bold text-lg leading-none">✕</button>
+            </div>
+            <div id="feedback-text" class="leading-relaxed mt-1 text-[15px]"></div>
+         </div>
+         
+         <div class="px-4 py-3 bg-white flex flex-col justify-center items-center border-t border-gray-100 relative w-full">
+            <div class="flex justify-between items-center w-full max-w-sm mb-3">
+                <button onclick="requestHint()" class="w-10 h-10 bg-yellow-50 border border-yellow-200 hover:bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-lg shadow-sm transition transform active:scale-95" title="求救">💡</button>
+                <div class="flex flex-col items-center">
+                    <p id="chat-status" class="text-[10px] text-gray-400 font-bold mb-1 uppercase tracking-wider">點擊麥克風 / 或輸入文字</p>
+                    <button id="btn-chat-mic" onclick="toggleChatMic()" class="w-14 h-14 bg-indigo-600 hover:bg-indigo-700 rounded-full flex items-center justify-center text-2xl text-white shadow-xl transition-all">🎤</button>
                 </div>
+                <button id="btn-mic-lang" onclick="toggleMicLang()" class="w-10 h-10 flex flex-col items-center justify-center bg-gray-50 border border-gray-200 hover:bg-gray-100 rounded-full text-[10px] font-bold text-gray-500 shadow-sm transition" title="切換語言"><span id="mic-lang-icon" class="text-sm">🇺🇸</span></button>
             </div>
-            <div id="loading" class="hidden text-center text-indigo-500 my-4 font-bold animate-pulse">大腦運轉中，請稍候...</div>
-        </div>
+            <div class="w-full max-w-sm flex gap-2">
+                <input type="text" id="chat-text-input" class="flex-grow px-4 py-2 border border-gray-300 rounded-full outline-none focus:border-indigo-500 text-sm shadow-inner" placeholder="輸入英文或中文回覆..." onkeypress="handleChatKeyPress(event)">
+                <button onclick="sendChatText()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-full text-sm font-bold shadow-sm transition shrink-0 transform active:scale-95">送出</button>
+            </div>
+         </div>
+     </div>
+  </div>
 
-        <!-- 內容顯示區 -->
-        <div id="content-area" class="hidden bg-white rounded-3xl shadow-sm p-6">
-            <h2 id="article-title" class="text-2xl font-bold mb-6 text-center text-gray-800"></h2>
-            <div id="cards-container"></div>
-            <div class="text-center mt-6">
-                <button onclick="earnReadingBonus()" class="bg-green-500 text-white font-bold py-2 px-6 rounded-full hover:bg-green-600 transition text-sm shadow-md"><i class="fa-solid fa-check mr-2"></i>我讀完了 (+50 幣)</button>
-            </div>
-        </div>
+  <!-- 4. 字卡介面 -->
+  <div id="view-cards" class="hidden w-full max-w-lg p-4 h-full flex-col justify-center">
+    <div class="flex justify-between items-center mb-4 px-2">
+      <button onclick="goBackToMenu()" class="text-gray-500 hover:text-indigo-600 font-bold text-sm bg-white px-3 py-1.5 rounded-lg shadow-sm">🏠 首頁</button>
+      <div class="text-center"><h2 id="card-main-title" class="text-xs font-bold text-gray-400 uppercase truncate max-w-[150px]">Lesson</h2><span id="counter" class="font-mono text-indigo-600 font-bold text-sm">1 / 10</span></div>
     </div>
-
-    <!-- 懸浮溫室按鈕 -->
-    <div id="plant-pot-btn" class="hidden" onclick="openPlantModal()" title="我的像素溫室">
-        <span class="text-4xl pixel-art">🪴</span>
-    </div>
-
-    <!-- 溫室彈出視窗 -->
-    <div id="plant-modal" onclick="closePlantModal(event)">
-        <div id="plant-card" onclick="event.stopPropagation()">
-            <button onclick="closePlantModal(event)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <h3 class="text-xs font-bold text-gray-400 tracking-wider mb-1">台灣原生特展</h3>
-            <h2 class="text-2xl font-bold text-indigo-700 mb-6">黃花風鈴木</h2>
-            
-            <div id="plant-visual-container">
-                <div id="plant-visual" class="text-8xl pixel-art">🟫</div>
+    <div class="relative w-full h-[70vh] perspective-1000 group cursor-pointer" onclick="flipCard(this)">
+      <div class="content-box relative w-full h-full transition-all duration-500 transform-style-3d shadow-2xl rounded-3xl">
+        <div class="absolute w-full h-full bg-white rounded-3xl p-6 flex flex-col backface-hidden border border-gray-100">
+          <div class="flex-grow overflow-y-auto custom-scroll flex flex-col justify-center">
+            <h2 id="card-chn" class="text-2xl leading-relaxed text-gray-800 font-chn text-left">...</h2>
+          </div>
+          <p class="mt-2 text-center text-gray-300 text-xs uppercase animate-pulse">Tap to check English</p>
+        </div>
+        <div class="absolute w-full h-full bg-slate-800 rounded-3xl p-6 flex flex-col justify-between backface-hidden rotate-y-180 text-white">
+          <div class="flex-grow overflow-y-auto custom-scroll pt-4">
+            <p id="card-eng" class="text-2xl leading-relaxed font-eng text-slate-100 mb-6">...</p>
+            <div id="vocab-area" class="border-t border-slate-600 pt-4 hidden"><div id="vocab-list" class="flex flex-wrap gap-2"></div></div>
+          </div>
+          <div class="mt-2 pt-3 border-t border-slate-600 flex flex-col gap-3" onclick="event.stopPropagation()">
+            <div class="flex gap-2">
+                <button onclick="speakTarget(event)" class="flex-1 bg-white/10 hover:bg-white/20 py-3 rounded-xl font-bold text-sm transition">🔊 朗讀</button>
+                <button id="btn-card-mic" onclick="toggleCardShadowing(event)" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-1 transition-all">🎤 跟讀</button>
+                <button onclick="showReviewPage()" class="flex-1 bg-white/10 hover:bg-white/20 py-3 rounded-xl font-bold text-sm transition">📖 全文</button>
             </div>
-
-            <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                <p class="text-xs text-gray-500 mb-2">距離金黃花海盛開 (500 幣)</p>
-                <div class="w-full bg-gray-200 rounded-full h-3 mb-2 overflow-hidden">
-                    <div id="plant-progress-bar" class="bg-yellow-400 h-3 rounded-full transition-all duration-1000" style="width: 0%"></div>
+            <div id="shadowing-feedback" class="hidden bg-slate-700/50 rounded-xl p-3 border border-slate-600">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-gray-400 text-xs font-bold">🎯 發音檢測</span>
+                    <span id="shadowing-score" class="font-bold text-sm"></span>
                 </div>
-                <p class="text-xl font-mono font-bold text-yellow-600"><span id="plant-coins-status">0</span> / 500</p>
+                <p id="shadowing-result" class="text-sm font-eng leading-relaxed">...</p>
             </div>
-            <p id="plant-tips" class="text-sm text-gray-500 mt-4 leading-relaxed">每一次練習，都是最好的灌溉。</p>
+          </div>
         </div>
+      </div>
     </div>
-
-    <!-- 開花慶典 -->
-    <div id="bloom-overlay">
-        <h1 class="text-8xl mb-6 pixel-art">🌼🌼🌼</h1>
-        <h2 class="text-4xl font-bold text-yellow-500 mb-2">黃金花海，燦爛盛開！</h2>
-        <p class="text-xl text-gray-600">恭喜你完成挑戰！你的語言花園充滿生機！</p>
+    <div class="flex justify-between mt-6 gap-4">
+      <button onclick="prevCard()" class="flex-1 bg-white text-gray-700 py-3 rounded-xl font-bold shadow transition hover:bg-gray-50">← 上一張</button>
+      <button onclick="nextCard()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg transition hover:bg-indigo-700">下一張 →</button>
     </div>
+  </div>
 
-    <script>
-        // ==========================================
-        // 🚨 系統設定區 (請填入你的 GAS 網址)
-        // ==========================================
-        const API_URL = "在此貼上你的_GAS_網頁應用程式網址"; 
+  <!-- 5. 全文閱讀介面 -->
+  <div id="view-review" class="hidden w-full max-w-lg p-6 h-full flex-col justify-center relative">
+    <div class="bg-white rounded-3xl shadow-2xl p-6 h-[85vh] flex flex-col relative border border-gray-100">
+      <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
+        <h2 class="text-xl font-bold text-gray-800 font-eng">📖 全文閱讀</h2>
+        <div class="flex gap-2">
+            <button id="btn-save-article" onclick="saveCurrentArticle()" class="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded transition font-bold text-sm">💾 儲存</button>
+            <button onclick="goBackToMenu()" class="text-gray-400 font-bold text-sm">✕</button>
+        </div>
+      </div>
+      <div class="flex-grow overflow-y-auto custom-scroll relative pr-2">
+         <div id="english-area">
+             <h3 id="review-title" class="text-2xl font-bold text-indigo-700 mb-4 font-eng clickable-word" onclick="speak(this.innerText)">Title</h3>
+             <div id="review-content" class="prose text-gray-800 font-eng text-lg leading-loose mb-6"></div>
+         </div>
+         <hr class="border-t-4 border-indigo-100 my-8 rounded-full">
+         <div id="chinese-area">
+             <h3 class="text-sm font-bold text-gray-400 mb-3 font-chn bg-gray-100 inline-block px-2 py-1 rounded">💡 中文翻譯</h3>
+             <div id="review-content-chn" class="prose text-gray-500 font-chn text-base leading-relaxed">(翻譯載入中...)</div>
+         </div>
+         <div id="word-popup">
+            <div class="flex justify-between items-start mb-1">
+                <h4 id="popup-word" class="text-lg font-bold text-indigo-700">Word</h4>
+                <button onclick="closePopup()" class="text-gray-300 hover:text-gray-500">×</button>
+            </div>
+            <div class="flex items-center gap-2 mb-2">
+                <span id="popup-ipa" class="text-xs text-gray-500 font-mono">/ipa/</span>
+                <button onclick="playPopupAudio()" class="text-indigo-500 text-xs hover:bg-indigo-50 rounded px-1">🔊</button>
+            </div>
+            <p id="popup-def" class="text-sm text-gray-700 font-chn leading-snug">Loading definition...</p>
+            <button id="btn-popup-save" onclick="savePopupWord()" class="mt-3 w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs py-1.5 rounded transition">+ 加入生字本</button>
+         </div>
+      </div>
+      <div class="mt-4 pt-4 border-t border-gray-100 flex gap-3">
+        <button id="btn-read-all" onclick="playFullArticle()" class="flex-1 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">🔊 全文朗讀</button>
+        <button onclick="goBackToMenu()" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold">🏠 回首頁</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. 生字本介面 -->
+  <div id="view-wordbank" class="hidden w-full max-w-lg p-6 h-full flex-col justify-center">
+    <div class="bg-white rounded-3xl shadow-2xl p-6 h-[80vh] flex flex-col border border-gray-100">
+      <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
+        <h2 class="text-xl font-bold text-gray-800 font-chn">📚 我的生字本</h2>
+        <button onclick="goBackToMenu()" class="text-gray-400 text-sm">✕</button>
+      </div>
+      <div id="wordbank-list" class="flex-grow overflow-y-auto custom-scroll space-y-3"><p class="text-center text-gray-400 mt-10">Loading...</p></div>
+      <button onclick="loadWordBank()" class="mt-4 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">↻ 重新整理</button>
+    </div>
+  </div>
+
+  <!-- 7. 文章庫介面 -->
+  <div id="view-library" class="hidden w-full max-w-lg p-6 h-full flex-col justify-center">
+    <div class="bg-white rounded-3xl shadow-2xl p-6 h-[80vh] flex flex-col border border-gray-100">
+      <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
+        <h2 class="text-xl font-bold text-gray-800 font-chn">📂 我的文章庫</h2>
+        <button onclick="goBackToMenu()" class="text-gray-400 text-sm">✕</button>
+      </div>
+      <div id="library-list" class="flex-grow overflow-y-auto custom-scroll space-y-3"><p class="text-center text-gray-400 mt-10">Loading...</p></div>
+      <button onclick="loadLibrary()" class="mt-4 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold">↻ 重新整理</button>
+    </div>
+  </div>
+
+  <!-- 🪴 懸浮盆栽按鈕與圖鑑轉蛋 Modal -->
+  <div id="plant-pot-btn" onclick="openPlantModal()" title="我的圖鑑溫室" class="fixed bottom-6 right-6 w-16 h-16 bg-white rounded-full border-4 border-indigo-100 shadow-xl flex items-center justify-center cursor-pointer z-40 transition transform hover:scale-110">
+     <span class="text-4xl pixel-art">🪴</span>
+  </div>
+
+  <div id="plant-modal" onclick="closePlantModal(event)">
+      <div id="plant-card" class="bg-white w-[90%] max-w-[360px] rounded-3xl p-6 shadow-2xl relative text-center" onclick="event.stopPropagation()">
+          <button onclick="closePlantModal(event)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10">✕</button>
+          
+          <!-- 切換頁籤：溫室 vs 圖鑑 -->
+          <div class="flex justify-center gap-4 border-b border-gray-100 pb-2 mb-4">
+              <button onclick="togglePlantTab('greenhouse')" id="tab-btn-greenhouse" class="text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 pb-1 transition">🪴 我的溫室</button>
+              <button onclick="togglePlantTab('encyclopedia')" id="tab-btn-encyclopedia" class="text-sm font-bold text-gray-400 pb-1 hover:text-indigo-600 transition">📖 原生圖鑑</button>
+          </div>
+
+          <!-- 畫面 A：培育溫室 -->
+          <div id="greenhouse-view">
+              <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Formosa LinguaGarden</h3>
+              <h2 id="current-plant-name" class="text-2xl font-bold text-indigo-700 font-chn mb-4">載入中...</h2>
+              
+              <div class="w-[120px] h-[120px] mx-auto mb-5 flex items-center justify-center">
+                  <div id="plant-visual" class="text-[80px] pixel-art leading-none animate-bounce">🟫</div>
+              </div>
+
+              <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 text-center">
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                      <div id="plant-progress-bar" class="bg-green-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                  </div>
+                  <p class="text-xl font-mono font-bold text-green-600 mt-2"><span id="plant-coins-status">0 / 0</span></p>
+              </div>
+              <p id="plant-tips" class="text-xs text-gray-400 mt-4 leading-relaxed font-chn">每一句勇敢的練習，都是陽光與水滴。</p>
+          </div>
+
+          <!-- 畫面 B：原生圖鑑與轉蛋機 -->
+          <div id="encyclopedia-view" class="hidden flex flex-col h-[280px]">
+              <div class="flex justify-between items-center bg-yellow-50 p-3 rounded-xl border border-yellow-200 mb-3">
+                  <span class="text-xs font-bold text-yellow-600">花費 150 陽光幣抽取種子</span>
+                  <button onclick="playGacha()" id="btn-gacha" class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition transform active:scale-95">🎲 抽取</button>
+              </div>
+              <div id="gacha-result" class="hidden text-sm font-bold text-indigo-700 mb-3 animate-pulse"></div>
+              
+              <div class="flex-grow overflow-y-auto custom-scroll text-left">
+                  <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">已解鎖台灣原生種：</p>
+                  <div id="unlocked-plants-list" class="flex flex-col gap-2"></div>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <!-- 🌼 開花慶典全螢幕特效 -->
+  <div id="bloom-overlay">
+      <h1 id="bloom-emoji" class="text-7xl mb-4 pixel-art">🌼🌼🌼</h1>
+      <h2 class="text-4xl font-bold text-yellow-500 font-chn mb-2 drop-shadow-sm">絕美盛開！</h2>
+      <p class="text-lg text-gray-600">恭喜你完成學習挑戰！你是最棒的！</p>
+  </div>
+
+  <!-- 🚀 核心 JavaScript 邏輯 -->
+  <script>
+    // 🚨🚨🚨 請在此處貼上你 Google Apps Script 最新部署的正式網址 🚨🚨🚨
+    const API_URL = "https://script.google.com/macros/s/AKfycbzTciZ2Z7Xrmc8IrV-VHqmJMT6rdbnnIbnE1j6YYKDv3yC3Av0fvofThL6pBmvj_GP0MQ/exec"; 
+
+    // 全局變數
+    let currentCards = [], currentIndex = 0, isPlayingFull = false;
+    let voices = [], wordCache = {}; 
+    let currentPopupData = null, currentArticleText = "", currentArticleChinese = "", currentArticleTitle = "", currentUserId = ""; 
+    let utteranceQueue = [];
+    const DEFAULT_RATE = 0.9, DEFAULT_PITCH = 0.9;
+
+    let chatRecognition = null, isChatRecording = false, chatHistoryText = "";
+    let currentSpeakScenario = "", currentSpeakMission = "";
+    let shadowRecognition = null, isShadowRecording = false;
+    let currentMicLang = 'en-US'; 
+
+    // 🌱 台灣原生植物圖鑑庫 (前端鏡像，用於顯示 emoji 與設定)
+    const NATIVE_PLANT_DB = [
+      { name: "黃花風鈴木", rarity: "Starter", emoji: "🌼", costToMax: 500 },
+      { name: "馬鞍藤", rarity: "N", emoji: "🌱", costToMax: 100 },
+      { name: "紫金牛", rarity: "N", emoji: "🌿", costToMax: 100 },
+      { name: "台灣欒樹", rarity: "R", emoji: "🌳", costToMax: 300 },
+      { name: "山櫻花", rarity: "R", emoji: "🌸", costToMax: 300 },
+      { name: "台灣百合", rarity: "R", emoji: "💮", costToMax: 300 },
+      { name: "水筆仔", rarity: "SR", emoji: "🎋", costToMax: 500 },
+      { name: "愛玉子", rarity: "SR", emoji: "🍃", costToMax: 500 },
+      { name: "牛樟", rarity: "SSR", emoji: "🪵", costToMax: 1000 },
+      { name: "台灣肖楠", rarity: "SSR", emoji: "🌲", costToMax: 1000 }
+    ];
+    let userStats = { coins: 0, plantStage: 0, currentPlant: '黃花風鈴木', unlockedPlants: [] };
+
+    async function init() {
+        const savedUser = localStorage.getItem('gem_username');
+        if (savedUser) {
+            currentUserId = savedUser; document.getElementById('display-user').innerText = currentUserId;
+            await refreshUserStats();
+            document.getElementById('view-login').classList.add('hidden');
+            document.getElementById('view-input').classList.remove('hidden'); document.getElementById('view-input').classList.add('flex');
+        } else { document.getElementById('view-login').classList.remove('hidden'); }
         
-        let currentUserId = "";
-        let userStats = { coins: 0, plantStage: 0 };
+        document.getElementById('input-rate').value = DEFAULT_RATE; document.getElementById('input-pitch').value = DEFAULT_PITCH;
+        loadVoices(); initSpeechRecognition(); initShadowRecognition(); 
+    }
+
+    function handleLogin() {
+        const nameInput = document.getElementById('login-username').value.trim();
+        if (!nameInput) return alert("請輸入姓名");
+        currentUserId = nameInput; localStorage.setItem('gem_username', currentUserId); 
+        init(); 
+    }
+    function handleLogout() { localStorage.removeItem('gem_username'); location.reload(); }
+    function getUserId() { if (!currentUserId) throw new Error("請先登入"); return currentUserId; }
+
+    function loadVoices() {
+      voices = window.speechSynthesis.getVoices();
+      const select = document.getElementById('input-voice'); select.innerHTML = '';
+      const engVoices = voices.filter(v => v.lang.startsWith('en'));
+      const listToShow = engVoices.length > 0 ? engVoices : voices;
+      listToShow.forEach((v) => { const option = document.createElement('option'); option.value = voices.indexOf(v); option.text = `${v.name} (${v.lang})`; select.appendChild(option); });
+      if(engVoices.length > 0) select.value = voices.indexOf(engVoices.find(v => v.lang === 'en-US') || engVoices[0]);
+    }
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    function syncSettings(rateId, pitchId) {
+        document.getElementById('speed-val').innerText = document.getElementById(rateId).value;
+        document.getElementById('pitch-val').innerText = document.getElementById(pitchId).value;
+    }
+    document.getElementById('input-rate').addEventListener('input', () => syncSettings('input-rate', 'input-pitch'));
+    document.getElementById('input-pitch').addEventListener('input', () => syncSettings('input-rate', 'input-pitch'));
+    function speak(txt) { 
+        window.speechSynthesis.cancel(); 
+        const u = new SpeechSynthesisUtterance(txt); u.lang = 'en-US'; 
+        u.rate = parseFloat(document.getElementById('input-rate').value) || 1;
+        u.pitch = parseFloat(document.getElementById('input-pitch').value) || 1;
+        const v = voices[document.getElementById('input-voice').value]; if(v) u.voice = v; 
+        window.speechSynthesis.speak(u); 
+    }
+
+    async function callApi(action, params) {
+      try {
+        const res = await fetch(API_URL, { method: "POST", body: JSON.stringify({ action, ...params }) });
+        const json = await res.json();
+        if (json.status === 'error') throw new Error(json.message);
+        return json;
+      } catch (e) { alert("Error: " + e.message); throw e; }
+    }
+
+    function goBackToMenu() {
+      stopFullAudio();
+      if(isChatRecording && chatRecognition) chatRecognition.stop();
+      if(isShadowRecording && shadowRecognition) shadowRecognition.stop();
+      ['view-cards', 'view-review', 'view-wordbank', 'view-library', 'view-speak'].forEach(id => { document.getElementById(id).classList.remove('flex'); document.getElementById(id).classList.add('hidden'); });
+      document.getElementById('view-input').classList.remove('hidden'); document.getElementById('view-input').classList.add('flex');
+    }
+    
+    function switchTab(mode) {
+       document.getElementById('form-topic').classList.toggle('hidden', mode!=='topic');
+       document.getElementById('form-explore').classList.toggle('hidden', mode!=='explore');
+       document.getElementById('form-speak').classList.toggle('hidden', mode!=='speak');
+       document.getElementById('form-paste').classList.toggle('hidden', mode!=='paste');
+       const activeClass = 'border-b-2 border-indigo-600 text-indigo-600 font-bold px-4 py-2 text-sm transition';
+       const inactiveClass = 'text-gray-500 px-4 py-2 text-sm transition hover:text-indigo-400';
+       document.getElementById('tab-topic').className = mode==='topic' ? activeClass : inactiveClass;
+       document.getElementById('tab-explore').className = mode==='explore' ? activeClass : inactiveClass;
+       document.getElementById('tab-speak').className = mode==='speak' ? activeClass : inactiveClass;
+       document.getElementById('tab-paste').className = mode==='paste' ? activeClass : inactiveClass;
+    }
+
+    // ==========================================
+    // 🌱 像素原生植物與轉蛋系統
+    // ==========================================
+    async function refreshUserStats() {
+        try {
+            const res = await callApi('getUserStats', { userId: getUserId() });
+            if (res.status === 'success') { updateGardenUI(res.data); document.getElementById('coin-display').classList.remove('hidden'); }
+        } catch(e) { console.error("讀取狀態失敗", e); }
+    }
+
+    function updateGardenUI(data) {
+        if (userStats.plantStage === 3 && data.plantStage === 4) triggerBloomCelebration(data.currentPlant);
+        userStats = data;
         
-        // 像素植物階段素材
-        const plantAssets = { 0: '🟫', 1: '🌱', 2: '🌳', 3: '🍂', 4: '🌼' };
+        document.getElementById('user-coins').innerText = userStats.coins;
+        document.getElementById('current-plant-name').innerText = userStats.currentPlant;
+        
+        const plantInfo = NATIVE_PLANT_DB.find(p => p.name === userStats.currentPlant) || { emoji: '🌼', costToMax: 500 };
+        const maxCoins = plantInfo.costToMax;
+        
+        document.getElementById('plant-coins-status').innerText = `${userStats.coins} / ${maxCoins}`;
+        document.getElementById('plant-progress-bar').style.width = `${Math.min((userStats.coins / maxCoins) * 100, 100)}%`;
+        
+        const genericStages = ['🟫', '🌱', '🌳', '🍂', plantInfo.emoji];
+        document.getElementById('plant-visual').innerHTML = genericStages[userStats.plantStage] || '🟫';
 
-        // ==========================================
-        // ⚙️ 核心 API 呼叫模組
-        // ==========================================
-        async function callApi(action, payload = {}) {
-            payload.action = action;
-            const res = await fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify(payload),
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-            });
-            const data = await res.json();
-            if (data.status !== 'success') throw new Error(data.message);
-            return data;
+        const tipsEl = document.getElementById('plant-tips');
+        if (userStats.plantStage === 4) tipsEl.innerText = "🏆 恭喜！植物已燦爛盛開！可以去圖鑑抽新種子囉！";
+        else if (userStats.plantStage === 3) tipsEl.innerText = "綠葉掉光不是死掉，是在醞釀最美的盛開。";
+        else tipsEl.innerText = "每一句勇敢的練習，都是給植物最棒的陽光與水滴。";
+    }
+
+    function togglePlantTab(tab) {
+        if(tab === 'greenhouse') {
+            document.getElementById('greenhouse-view').classList.remove('hidden'); document.getElementById('encyclopedia-view').classList.add('hidden');
+            document.getElementById('tab-btn-greenhouse').className = "text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 pb-1 transition";
+            document.getElementById('tab-btn-encyclopedia').className = "text-sm font-bold text-gray-400 pb-1 hover:text-indigo-600 transition";
+        } else {
+            document.getElementById('greenhouse-view').classList.add('hidden'); document.getElementById('encyclopedia-view').classList.remove('hidden');
+            document.getElementById('tab-btn-greenhouse').className = "text-sm font-bold text-gray-400 pb-1 hover:text-indigo-600 transition";
+            document.getElementById('tab-btn-encyclopedia').className = "text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 pb-1 transition";
+            renderEncyclopedia();
         }
+    }
 
-        // ==========================================
-        // 🎮 遊戲化與植物溫室邏輯
-        // ==========================================
-        async function refreshUserStats() {
-            try {
-                const res = await callApi('getUserStats', { userId: currentUserId });
-                updateGardenUI(res.data);
-            } catch(e) { console.error("讀取狀態失敗", e); }
+    function openPlantModal() { if(isPlayingFull) stopFullAudio(); document.getElementById('plant-modal').style.display = 'flex'; }
+    function closePlantModal(e) { if (e && e.target.id !== 'plant-modal' && !e.target.closest('#plant-card') && e.target.tagName !== 'BUTTON') return; document.getElementById('plant-modal').style.display = 'none'; }
+    function triggerBloomCelebration(plantName) {
+        window.speechSynthesis.cancel();
+        const plantInfo = NATIVE_PLANT_DB.find(p => p.name === plantName) || { emoji: '🌼' };
+        document.getElementById('bloom-emoji').innerText = `${plantInfo.emoji}${plantInfo.emoji}${plantInfo.emoji}`;
+        const overlay = document.getElementById('bloom-overlay');
+        overlay.style.display = 'flex'; setTimeout(() => { overlay.style.display = 'none'; openPlantModal(); }, 3000); 
+    }
+
+    async function playGacha() {
+        const btn = document.getElementById('btn-gacha'); btn.disabled = true; btn.innerText = "抽取中...";
+        try {
+            const res = await callApi('drawGacha', { userId: getUserId() });
+            const resultDiv = document.getElementById('gacha-result'); resultDiv.classList.remove('hidden');
+            if (res.status === 'error') {
+                resultDiv.innerText = "❌ " + res.message; resultDiv.className = "text-sm font-bold text-red-500 mb-3";
+            } else {
+                const plant = res.data.pulled; userStats.coins = res.data.newCoins;
+                document.getElementById('user-coins').innerText = userStats.coins;
+                resultDiv.innerText = `🎉 獲得 [${plant.rarity}] ${plant.name} ${plant.emoji} !`;
+                resultDiv.className = "text-sm font-bold text-green-600 mb-3 animate-bounce";
+                if (!userStats.unlockedPlants.includes(plant.name)) userStats.unlockedPlants.push(plant.name);
+                
+                // 詢問是否要換盆
+                if(confirm(`恭喜抽到 ${plant.name}！是否要將溫室的盆栽換成它？(進度將從種子重新開始)`)) {
+                    const changeRes = await callApi('changePlant', { userId: getUserId(), plantName: plant.name });
+                    if(changeRes.status === 'success') updateGardenUI(changeRes.data);
+                }
+                renderEncyclopedia();
+            }
+        } catch(e) { console.error(e); }
+        btn.disabled = false; btn.innerText = "🎲 抽取";
+    }
+
+    function renderEncyclopedia() {
+        const listEl = document.getElementById('unlocked-plants-list');
+        listEl.innerHTML = userStats.unlockedPlants.map(name => {
+            const info = NATIVE_PLANT_DB.find(p => p.name === name) || { rarity: '?', emoji: '✨' };
+            const rarityColors = { 'Starter': 'text-gray-500 bg-gray-100', 'N': 'text-green-600 bg-green-50', 'R': 'text-blue-600 bg-blue-50', 'SR': 'text-purple-600 bg-purple-50', 'SSR': 'text-yellow-600 bg-yellow-50' };
+            return `<div class="bg-gray-50 border border-gray-100 p-2 rounded-lg flex justify-between items-center">
+                        <span class="text-sm font-bold text-gray-700">${info.emoji} ${name}</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded ${rarityColors[info.rarity] || 'text-gray-500'}">${info.rarity}</span>
+                    </div>`;
+        }).join('');
+    }
+
+    // ==========================================
+    // 🗣️ Speak Mode (RPG 任務引擎、雙語家教)
+    // ==========================================
+    function toggleCustomScenario() {
+        const select = document.getElementById('input-speak-scenario'); const customInput = document.getElementById('input-custom-scenario');
+        if (select.value === 'custom') { customInput.classList.remove('hidden'); customInput.focus(); } else { customInput.classList.add('hidden'); }
+    }
+    function toggleMicLang() {
+        const icon = document.getElementById('mic-lang-icon');
+        if (currentMicLang === 'en-US') { currentMicLang = 'cmn-Hant-TW'; icon.innerText = '🇹🇼'; } else { currentMicLang = 'en-US'; icon.innerText = '🇺🇸'; }
+        if (chatRecognition) chatRecognition.lang = currentMicLang;
+    }
+    async function sendChatText() {
+        const inputEl = document.getElementById('chat-text-input'); const text = inputEl.value.trim();
+        if (!text) return; inputEl.value = ''; appendChatMessage('user', text); await handleChatTurn(text);
+    }
+    function handleChatKeyPress(e) { if (e.key === 'Enter') sendChatText(); }
+
+    function initSpeechRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            chatRecognition = new SpeechRecognition(); chatRecognition.lang = currentMicLang; chatRecognition.continuous = false; chatRecognition.interimResults = false;
+            chatRecognition.onstart = () => { isChatRecording = true; document.getElementById('btn-chat-mic').classList.add('mic-active'); document.getElementById('chat-status').innerText = `聆聽中... (${currentMicLang === 'en-US' ? 'EN' : '中文'})`; document.getElementById('chat-status').classList.replace('text-gray-400', 'text-red-500'); };
+            chatRecognition.onresult = async (event) => { const text = event.results[0][0].transcript; appendChatMessage('user', text); await handleChatTurn(text); };
+            chatRecognition.onerror = () => { stopChatMicUI(); document.getElementById('chat-status').innerText = "請再試一次"; };
+            chatRecognition.onend = () => { stopChatMicUI(); };
         }
+    }
 
-        function updateGardenUI(data) {
-            // 觸發開花特效判定
-            if (userStats.plantStage === 3 && data.plantStage === 4) { triggerBloomCelebration(); }
-            
-            userStats = data;
-            document.getElementById('user-coins').innerText = userStats.coins;
-            document.getElementById('plant-coins-status').innerText = userStats.coins;
-            
-            const progress = Math.min((userStats.coins / 500) * 100, 100);
-            document.getElementById('plant-progress-bar').style.width = `${progress}%`;
-
-            const visualEl = document.getElementById('plant-visual');
-            visualEl.innerText = plantAssets[userStats.plantStage] || '🟫';
-
-            const tipsEl = document.getElementById('plant-tips');
-            if (userStats.plantStage === 4) tipsEl.innerText = "🏆 你的專屬黃花風鈴木已燦爛盛開！";
-            else if (userStats.plantStage === 3) tipsEl.innerText = "綠葉掉光不是枯萎，是在醞釀最美的爆發。";
-            else if (userStats.coins >= 300) tipsEl.innerText = "枝葉越來越茂密了，繼續保持閱讀習慣！";
-            else tipsEl.innerText = "每一句勇敢的朗讀，都是最好的陽光與水滴。";
-        }
-
-        async function rewardCoins(amount) {
-            try {
-                const res = await callApi('addCoins', { userId: currentUserId, amount: amount });
-                updateGardenUI(res.data);
-            } catch(e) { console.error("發放獎勵失敗", e); }
-        }
-
-        function openPlantModal() { document.getElementById('plant-modal').style.display = 'flex'; }
-        function closePlantModal(e) {
-            if (e && e.target.id !== 'plant-modal' && !e.target.closest('#plant-card') && e.target.tagName !== 'BUTTON') return;
-            document.getElementById('plant-modal').style.display = 'none';
-        }
-        function triggerBloomCelebration() {
-            const overlay = document.getElementById('bloom-overlay');
-            overlay.style.display = 'flex';
-            setTimeout(() => { overlay.style.display = 'none'; openPlantModal(); }, 3000); 
-        }
-
-        // ==========================================
-        // 📚 學習核心邏輯 (生成文章、字卡、發音)
-        // ==========================================
-        function login() {
-            const name = document.getElementById('username-input').value.trim();
-            if (!name) return alert("請輸入名字！");
-            localStorage.setItem('gem_username', name);
-            init();
-        }
-
-        async function init() {
-            const savedUser = localStorage.getItem('gem_username');
-            if (savedUser) {
-                currentUserId = savedUser; 
-                document.getElementById('display-user').innerText = currentUserId;
-                document.getElementById('view-login').classList.add('hidden');
-                document.getElementById('view-main').classList.remove('hidden'); 
-                document.getElementById('view-main').classList.add('flex');
-                document.getElementById('coin-display').classList.remove('hidden');
-                document.getElementById('plant-pot-btn').classList.remove('hidden');
-                await refreshUserStats(); // 登入時抓取金幣
+    async function initSpeakMode() {
+        if(!chatRecognition) return alert("您的瀏覽器不支援語音功能。");
+        const scenarioSelect = document.getElementById('input-speak-scenario'); const difficultySelect = document.getElementById('input-speak-difficulty').value;
+        let displayTitle = "", baseScenario = "";
+        
+        if (scenarioSelect.value === 'custom') {
+            const customVal = document.getElementById('input-custom-scenario').value.trim(); if (!customVal) return alert("請輸入自訂情境！");
+            baseScenario = customVal; displayTitle = "✍️ 自訂情境"; currentSpeakMission = "與對方建立友好的對話交流並成功結束話題";
+        } else {
+            baseScenario = scenarioSelect.value; displayTitle = scenarioSelect.options[scenarioSelect.selectedIndex].text.split(' ')[0];
+            if (baseScenario.includes("cafe")) {
+                if(difficultySelect === 'easy') currentSpeakMission = "向店員點一杯你想喝的飲料，並詢問總共多少錢。";
+                else if(difficultySelect === 'medium') currentSpeakMission = "向店員抱怨飲料做錯了(例如熱的做成冰的)，並要求對方重做一杯。";
+                else currentSpeakMission = "成功說服店員賣給你一杯『不在菜單上的隱藏特調』。";
+            } else if (baseScenario.includes("airport")) {
+                if(difficultySelect === 'easy') currentSpeakMission = "順利回答海關關於「來訪目的」與「停留時間」的基本問題。";
+                else if(difficultySelect === 'medium') currentSpeakMission = "海關懷疑你的行李有違禁品，請向他解釋那是台灣名產(如鳳梨酥)並非農產品。";
+                else currentSpeakMission = "你的簽證出了點問題，請試圖說服海關讓你聯絡大使館或通融放行。";
+            } else if (baseScenario.includes("restaurant")) {
+                if(difficultySelect === 'easy') currentSpeakMission = "順利向服務生點一份主餐與一份附餐。";
+                else if(difficultySelect === 'medium') currentSpeakMission = "抱怨餐點裡面有蟲子，並堅決要求經理出面處理。";
+                else currentSpeakMission = "結帳時發現忘記帶錢包，試圖與經理協商讓你賒帳或用洗碗抵債。";
+            } else if (baseScenario.includes("Interview")) {
+                if(difficultySelect === 'easy') currentSpeakMission = "順利用英文向面試官做一個簡短的自我介紹。";
+                else if(difficultySelect === 'medium') currentSpeakMission = "完美回答面試官的刁鑽問題：「請告訴我你最大的缺點是什麼？」";
+                else currentSpeakMission = "說服面試官：雖然你完全沒有相關經驗，但你要求比一般新人高 30% 的薪水。";
             }
         }
+        
+        let aiPersonality = "Be friendly and cooperative.";
+        if(difficultySelect === 'medium') aiPersonality = "Be slightly hesitant or make a minor mistake that the user has to correct.";
+        if(difficultySelect === 'hard') aiPersonality = "Be strict, skeptical, and uncooperative. Make it very difficult for the user to achieve their mission. Only yield if their argument is extremely convincing.";
+        
+        document.getElementById('speak-scenario-title').innerText = displayTitle; document.getElementById('mission-text').innerText = currentSpeakMission;
+        document.getElementById('mission-banner').classList.remove('hidden'); document.getElementById('mission-vocab-area').classList.add('hidden'); 
+        const statusEl = document.getElementById('mission-status'); statusEl.innerText = "未完成"; statusEl.className = "text-xs font-bold text-gray-400 bg-white px-2 py-0.5 rounded border border-gray-200";
 
-        async function generateContent() {
-            const topic = document.getElementById('topic-input').value || "AI in the future";
-            const level = document.getElementById('level-select').value;
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('content-area').classList.add('hidden');
-            
-            try {
-                const res = await callApi('generate', { topic: topic, level: level, len: 'short', scenario: 'article' });
-                renderCards(res.data);
-            } catch (err) {
-                alert("生成失敗：" + err.message);
-            } finally {
-                document.getElementById('loading').classList.add('hidden');
+        chatHistoryText = ""; document.getElementById('chat-history').innerHTML = ""; document.getElementById('chat-feedback').classList.add('hidden');
+        ['view-input', 'view-cards', 'view-review', 'view-wordbank', 'view-library'].forEach(id => { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); });
+        document.getElementById('view-speak').classList.remove('hidden'); document.getElementById('view-speak').classList.add('flex');
+
+        document.getElementById('chat-status').innerText = "正在準備單字挑戰...";
+        let vocabInstruction = "";
+        try {
+            const vRes = await callApi('getVocab', { userId: getUserId() });
+            if (vRes.status === 'success' && vRes.data.length > 0) {
+                const shuffled = vRes.data.sort(() => 0.5 - Math.random()); const targetVocab = shuffled.slice(0, 3).map(v => v.word);
+                document.getElementById('mission-vocab-area').classList.remove('hidden'); document.getElementById('mission-vocab-list').innerHTML = targetVocab.map(w => `<span class="bg-white text-blue-600 px-2 py-0.5 rounded text-xs border border-blue-100 shadow-sm">${w}</span>`).join('');
+                vocabInstruction = `\n\nSECRET TUTOR TASK: Please naturally weave at least one of these vocabulary words into your English replies to test the user: [${targetVocab.join(', ')}].`;
             }
+        } catch(e) {}
+
+        currentSpeakScenario = `Roleplay Scenario: [${baseScenario}]. You MUST act as the other person in this scenario. Fully immerse in your character. ${aiPersonality}${vocabInstruction}`;
+
+        document.getElementById('chat-status').innerText = "AI 正在進入角色...";
+        try {
+            const res = await callApi('speak_mode', { userInput: "(Please start the conversation.)", history: "", scenario: currentSpeakScenario, mission: currentSpeakMission });
+            appendChatMessage('ai', res.data.reply, res.data.reply_chn); speak(res.data.reply); chatHistoryText += `AI: ${res.data.reply}\n`;
+        } catch (err) { appendChatMessage('ai', "連線失敗，請重試。"); } finally { document.getElementById('chat-status').innerText = "點擊麥克風 / 或輸入文字"; }
+    }
+
+    function toggleChatMic() {
+        if (!chatRecognition) return alert("瀏覽器不支援語音。");
+        if (isChatRecording) { chatRecognition.stop(); } else { window.speechSynthesis.cancel(); try { chatRecognition.start(); } catch(e) {} }
+    }
+    function stopChatMicUI() {
+        isChatRecording = false; document.getElementById('btn-chat-mic').classList.remove('mic-active'); document.getElementById('chat-status').innerText = "點擊麥克風 / 或輸入文字"; document.getElementById('chat-status').classList.replace('text-red-500', 'text-gray-400');
+    }
+
+    async function handleChatTurn(userText) {
+        document.getElementById('chat-status').innerText = "AI 思考中...";
+        try {
+            const res = await callApi('speak_mode', { userInput: userText, history: chatHistoryText, scenario: currentSpeakScenario, mission: currentSpeakMission });
+            const data = res.data;
+            if (data.mission_cleared === true) {
+                const statusEl = document.getElementById('mission-status');
+                if(statusEl.innerText !== "🎉 MISSION CLEARED") {
+                    statusEl.innerText = "🎉 MISSION CLEARED"; statusEl.className = "text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded border border-green-300 animate-pulse";
+                    data.feedback = "🏆 **太神啦！任務達成！**\n" + (data.feedback || "");
+                    await callApi('addCoins', { userId: getUserId(), amount: 50 }); refreshUserStats(); // 任務達成獎勵 50 幣
+                }
+            }
+            appendChatMessage('ai', data.reply, data.reply_chn); speak(data.reply); 
+            if (data.feedback && data.feedback.trim() !== "" && !data.feedback.toLowerCase().includes("perfect")) {
+                const fbDiv = document.getElementById('chat-feedback');
+                const formattedFeedback = data.feedback.replace(/([a-zA-Z][a-zA-Z\s.,?!']{4,}[a-zA-Z.?!])/g, function(match) { const safeText = match.replace(/'/g, "\\'"); return `<span class="inline-block bg-white border border-indigo-200 text-indigo-700 font-bold cursor-pointer hover:bg-indigo-50 rounded-lg px-2 py-0.5 my-1 shadow-sm transition transform active:scale-95" onclick="speak('${safeText}')" title="點擊發音">🔊 ${match}</span>`; });
+                document.getElementById('feedback-text').innerHTML = formattedFeedback; fbDiv.classList.remove('hidden'); setTimeout(() => { fbDiv.classList.add('hidden'); }, 15000); 
+            } else { document.getElementById('chat-feedback').classList.add('hidden'); }
+            chatHistoryText += `User: ${userText}\nAI: ${data.reply}\n`;
+        } catch (err) { appendChatMessage('ai', "抱歉，發生錯誤。"); } finally { if(!isChatRecording) document.getElementById('chat-status').innerText = "點擊麥克風 / 或輸入文字"; }
+    }
+
+    async function requestHint() {
+        if (isChatRecording) toggleChatMic(); appendChatMessage('user', "I don't know what to say... 🥺"); await handleChatTurn("(The user needs help. Provide 2-3 short examples of what they could say next.)");
+    }
+
+    function appendChatMessage(role, text, textChn = "") {
+        const chatBox = document.getElementById('chat-history'); const div = document.createElement('div');
+        div.style.opacity = '0'; div.style.transform = 'translateY(10px)'; div.style.transition = 'all 0.3s ease';
+        if (role === 'user') { div.className = "self-end bg-indigo-600 text-white p-3 rounded-2xl rounded-tr-none max-w-[85%] shadow"; div.innerHTML = `<p class="text-[15px]">${text}</p>`; } else {
+            div.className = "self-start bg-white border border-gray-200 text-gray-800 p-3 rounded-2xl rounded-tl-none max-w-[85%] shadow-sm relative"; const formattedText = text.replace(/\n/g, '<br>');
+            div.innerHTML = `<button onclick="speak('${text.replace(/'/g, "\\'").replace(/\n/g, ' ')}')" class="absolute -left-2 -top-2 bg-indigo-100 text-indigo-700 rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-sm z-10">🔊</button><p class="text-[15px] font-eng ml-2 leading-relaxed">${formattedText}</p>${textChn ? `<p class="text-xs text-gray-400 font-chn mt-3 border-t border-gray-100 pt-2 ml-2 leading-relaxed">${textChn.replace(/\n/g, '<br>')}</p>` : ''}`;
         }
+        chatBox.appendChild(div); setTimeout(() => { div.style.opacity = '1'; div.style.transform = 'translateY(0)'; chatBox.scrollTop = chatBox.scrollHeight; }, 50);
+    }
 
-        function renderCards(data) {
-            document.getElementById('article-title').innerText = data.title;
-            const container = document.getElementById('cards-container');
-            container.innerHTML = "";
-            
-            data.cards.forEach((card, index) => {
-                let vocabHtml = card.vocabulary ? card.vocabulary.map(v => 
-                    `<div class="flex justify-between items-center bg-gray-50 p-2 rounded mb-2 text-sm border">
-                        <div><strong class="text-indigo-600">${v.word}</strong> <span class="text-gray-400 text-xs">/${v.ipa}/</span><br><span class="text-gray-600">${v.def}</span></div>
-                        <button onclick="saveWord('${v.word}', '${v.ipa}', '${v.def}', '${escape(card.english)}', '${escape(card.chinese)}', this, event)" class="text-indigo-500 hover:bg-indigo-100 px-3 py-1 rounded font-bold transition" title="加入生字本 (+20幣)">+ 儲存</button>
-                    </div>`
-                ).join('') : '';
-
-                const cardHtml = `
-                <div class="card-container" onclick="this.querySelector('.card').classList.toggle('flipped')">
-                    <div class="card">
-                        <div class="card-face">
-                            <button onclick="playTTS('${escape(card.english)}', event)" class="absolute top-4 right-4 text-gray-400 hover:text-indigo-500"><i class="fa-solid fa-volume-high"></i></button>
-                            <p class="text-lg font-bold text-gray-800 pr-8">${card.english}</p>
-                        </div>
-                        <div class="card-face card-back">
-                            <p class="text-md text-gray-600 mb-4 border-b pb-2">${card.chinese}</p>
-                            <div class="overflow-y-auto max-h-32" onclick="event.stopPropagation()">${vocabHtml}</div>
-                        </div>
-                    </div>
-                </div>`;
-                container.insertAdjacentHTML('beforeend', cardHtml);
-            });
-            document.getElementById('content-area').classList.remove('hidden');
+    // ==========================================
+    // 發音跟讀 (Shadowing) 與 文章生成
+    // ==========================================
+    function initShadowRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            shadowRecognition = new SpeechRecognition(); shadowRecognition.lang = 'en-US'; shadowRecognition.continuous = false; shadowRecognition.interimResults = false;
+            shadowRecognition.onstart = () => { isShadowRecording = true; document.getElementById('btn-card-mic').classList.add('mic-active'); document.getElementById('shadowing-feedback').classList.remove('hidden'); document.getElementById('shadowing-result').innerHTML = "<span class='animate-pulse text-gray-300'>正在聆聽...</span>"; document.getElementById('shadowing-score').innerText = ""; };
+            shadowRecognition.onresult = (event) => { checkPronunciation(event.results[0][0].transcript); };
+            shadowRecognition.onerror = () => { isShadowRecording = false; document.getElementById('btn-card-mic').classList.remove('mic-active'); document.getElementById('shadowing-result').innerText = "聽不清楚，請重試。"; };
+            shadowRecognition.onend = () => { isShadowRecording = false; document.getElementById('btn-card-mic').classList.remove('mic-active'); };
         }
+    }
+    function toggleCardShadowing(e) { e.stopPropagation(); if (!shadowRecognition) return alert("瀏覽器不支援。"); if (isShadowRecording) shadowRecognition.stop(); else { window.speechSynthesis.cancel(); try { shadowRecognition.start(); } catch(e) {} } }
+    
+    function checkPronunciation(userText) {
+        const targetText = currentCards[currentIndex].english; const cleanTarget = targetText.toLowerCase().replace(/[^\w\s']/g, '').trim().split(/\s+/); const cleanUser = userText.toLowerCase().replace(/[^\w\s']/g, '').trim().split(/\s+/);
+        let matchCount = 0; let targetWordsMatched = new Set();
+        const coloredUserText = cleanUser.map((uWord) => { const matchIdx = cleanTarget.findIndex((tWord, i) => tWord === uWord && !targetWordsMatched.has(i)); if (matchIdx !== -1) { matchCount++; targetWordsMatched.add(matchIdx); return `<span class="text-green-400 font-bold">${uWord}</span>`; } else { return `<span class="text-red-400 line-through opacity-80">${uWord}</span>`; } }).join(' ');
+        const score = Math.round((matchCount / Math.max(cleanTarget.length, 1)) * 100); const cappedScore = Math.min(score, 100);
+        document.getElementById('shadowing-result').innerHTML = coloredUserText || "未聽清楚"; const scoreEl = document.getElementById('shadowing-score'); scoreEl.innerText = cappedScore + "%";
+        if (cappedScore >= 80) scoreEl.className = "font-bold text-sm text-green-400"; else if (cappedScore >= 50) scoreEl.className = "font-bold text-sm text-yellow-400"; else scoreEl.className = "font-bold text-sm text-red-400";
+    }
 
-        // 儲存單字並獲取金幣獎勵
-        async function saveWord(w, i, d, ctxEscaped, ctxChnEscaped, btn, event) {
-            event.stopPropagation(); // 防止字卡翻轉
-            btn.innerText = "已儲存"; btn.disabled = true; btn.classList.add("opacity-50");
-            try {
-                await callApi('saveVocab', { userId: currentUserId, word: w, ipa: i, def: d, ctx: unescape(ctxEscaped), ctxChn: unescape(ctxChnEscaped) });
-                rewardCoins(20); // 呼叫後端加 20 幣！
-            } catch(e) { console.error("儲存失敗", e); }
-        }
+    function submitExplore() {
+       const query = document.getElementById('input-explore-query').value.trim(); if(!query) return alert("請輸入想要聯網搜尋的關鍵字");
+       document.getElementById('loading-msg').innerText = "🌐 AI 正在網路上為您蒐集並提煉資料..."; document.getElementById('loading-msg').classList.remove('hidden');
+       startGen('search_web', { query: query, level: document.getElementById('input-explore-level').value });
+    }
+    function submitTopic() {
+       const topic=document.getElementById('input-topic').value; if(!topic)return alert("請輸入主題");
+       document.getElementById('loading-msg').innerText = "🤖 AI 正在準備中..."; document.getElementById('loading-msg').classList.remove('hidden');
+       startGen('generate', { topic, level:document.getElementById('input-level').value, len:document.getElementById('input-len-topic').value, scenario:document.getElementById('input-scenario').value });
+    }
+    function submitPaste() {
+       const txt=document.getElementById('input-content').value; if(!txt)return alert("請貼上文章");
+       document.getElementById('loading-msg').innerText = "🤖 AI 正在準備中..."; document.getElementById('loading-msg').classList.remove('hidden');
+       startGen('import', { title: document.getElementById('input-title').value, content:txt, len:document.getElementById('input-len-paste').value });
+    }
 
-        // 閱讀完成的加碼獎勵
-        function earnReadingBonus() {
-            rewardCoins(50);
-            alert("太棒了！認真閱讀獲得 50 陽光幣獎勵！");
-        }
+    function startGen(act, data) {
+        callApi(act, data).then(res => {
+            document.getElementById('loading-msg').classList.add('hidden'); currentCards = res.data.cards; currentIndex = 0;
+            currentArticleText = currentCards.map(c => c.english).join(' '); currentArticleChinese = currentCards.map(c => c.chinese).join('<br><br>');
+            currentArticleTitle = res.data.title || 'Lesson'; document.getElementById('card-main-title').innerText = currentArticleTitle;
+            document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-input').classList.remove('flex'); document.getElementById('view-cards').classList.remove('hidden'); document.getElementById('view-cards').classList.add('flex'); renderCard();
+        });
+    }
 
-        // 呼叫後端真人語音
-        async function playTTS(textEscaped, event) {
-            event.stopPropagation();
-            const text = unescape(textEscaped);
-            try {
-                const res = await callApi('tts', { text: text, voice: 'en-US-Journey-F' });
-                const audio = new Audio("data:audio/mp3;base64," + res.data.audioContent);
-                audio.play();
-            } catch(e) { alert("語音播放失敗：" + e.message); }
-        }
+    function renderCard() {
+        const c = currentCards[currentIndex];
+        document.getElementById('card-eng').innerText = c.english; document.getElementById('card-chn').innerText = c.chinese; document.getElementById('counter').innerText = `${currentIndex+1}/${currentCards.length}`;
+        const vList = document.getElementById('vocab-list');
+        if(c.vocabulary && c.vocabulary.length){
+            document.getElementById('vocab-area').classList.remove('hidden');
+            vList.innerHTML = c.vocabulary.map(v => `<button onclick="event.stopPropagation();saveWord('${v.word}','${v.ipa}','${v.def}', '${escape(c.english)}', '${escape(c.chinese)}', this)" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-full shadow-sm">+ ${v.word}</button>`).join('');
+        } else { document.getElementById('vocab-area').classList.add('hidden'); }
+        document.getElementById('shadowing-feedback').classList.add('hidden'); document.querySelector('.group').classList.remove('flipped');
+    }
+    
+    function flipCard(el){ if(isChatRecording && chatRecognition) chatRecognition.stop(); if(isShadowRecording && shadowRecognition) shadowRecognition.stop(); el.classList.toggle('flipped'); }
+    function nextCard(){ if(currentIndex<currentCards.length-1){currentIndex++; renderCard();} else { showReviewPage(false); } }
+    function prevCard(){ if(currentIndex>0){currentIndex--; renderCard();} }
+    function speakTarget(e){ e.stopPropagation(); speak(currentCards[currentIndex].english); }
 
-        // 啟動程式
-        window.onload = init;
-    </script>
+    function showReviewPage(isFromLibrary = false) {
+        document.getElementById('view-cards').classList.add('hidden'); document.getElementById('view-cards').classList.remove('flex'); const view = document.getElementById('view-review'); view.classList.remove('hidden'); view.classList.add('flex');
+        const saveBtn = document.getElementById('btn-save-article');
+        if(isFromLibrary) { saveBtn.innerHTML = "📂 已收藏"; saveBtn.disabled = true; saveBtn.classList.add('text-gray-400'); } else { saveBtn.innerHTML = "💾 儲存"; saveBtn.disabled = false; saveBtn.classList.remove('text-gray-400'); }
+        document.getElementById('review-title').innerText = currentArticleTitle;
+        document.getElementById('review-content').innerHTML = currentArticleText.split(/(\s+)/).map(w => { if(w.trim().length === 0) return w; const rawWord = w.replace(/[^\w']/g, ""); if(!rawWord) return w; return `<span class="clickable-word" onclick="handleWordClick('${rawWord}', this)">${w}</span>`; }).join('');
+        document.getElementById('review-content-chn').innerHTML = currentArticleChinese || "(暫無翻譯)";
+    }
+    function saveCurrentArticle() {
+        if(!currentArticleText) return; const btn = document.getElementById('btn-save-article'); btn.innerText = "Saving...";
+        callApi('saveArticle', { userId: getUserId(), title: currentArticleTitle, content: currentArticleText, contentChn: currentArticleChinese }).then(() => { btn.innerText = "✓ 已儲存"; btn.disabled = true; btn.classList.add('text-green-600'); });
+    }
+
+    async function handleWordClick(word, el) {
+        speak(word); const popup = document.getElementById('word-popup'); const rect = el.getBoundingClientRect(); const parentRect = document.getElementById('view-review').getBoundingClientRect();
+        let top = rect.top - parentRect.top - popup.offsetHeight - 10; if(top < 0) top = rect.bottom - parentRect.top + 10; popup.style.top = `${top}px`; popup.style.left = `${rect.left - parentRect.left}px`; popup.style.display = 'block';
+        document.getElementById('popup-word').innerText = word; document.getElementById('popup-ipa').innerText = "..."; document.getElementById('popup-def').innerText = "Translating...";
+        let startIdx = Math.max(0, currentArticleText.indexOf(word) - 50); let endIdx = Math.min(currentArticleText.length, currentArticleText.indexOf(word) + word.length + 50); let contextSnippet = currentArticleText.substring(startIdx, endIdx).trim();
+        const sentences = currentArticleText.match(/[^\.!\?]+[\.!\?]+/g) || [currentArticleText]; const exactSentence = sentences.find(s => s.includes(word)) || contextSnippet;
+        currentPopupData = { word: word, context: exactSentence.trim() }; 
+        if (wordCache[word]) updatePopup(wordCache[word]); else { try { const res = await callApi('translate', { word: word, context: currentPopupData.context }); if(res.status === 'success') { wordCache[word] = res.data; updatePopup(res.data); } else { document.getElementById('popup-def').innerText = "Translation not found."; } } catch(e) { document.getElementById('popup-def').innerText = "Error loading."; } }
+    }
+    function updatePopup(data) { document.getElementById('popup-ipa').innerText = data.ipa || ''; document.getElementById('popup-def').innerText = data.def; currentPopupData = { ...currentPopupData, ...data }; }
+    function closePopup() { document.getElementById('word-popup').style.display = 'none'; }
+    function playPopupAudio() { if(currentPopupData) speak(currentPopupData.word); }
+    
+    async function savePopupWord() {
+        if(!currentPopupData || !currentPopupData.def) return; 
+        const btn = document.getElementById('btn-popup-save'); btn.innerText = "儲存中...";
+        try {
+            await callApi('saveVocab', { userId: getUserId(), word: currentPopupData.word, ipa: currentPopupData.ipa, def: currentPopupData.def, ctx: currentPopupData.context, ctxChn: currentPopupData.example_chn || "(From Review)" });
+            btn.innerText = "✓ 已儲存"; btn.classList.replace('bg-indigo-600','bg-green-500'); btn.disabled=true;
+            const res = await callApi('addCoins', { userId: getUserId(), amount: 20 });
+            if(res.status === 'success') updateGardenUI(res.data);
+        } catch(e) { console.error("儲存失敗", e); }
+    }
+    document.addEventListener('click', function(e) { const popup = document.getElementById('word-popup'); if (popup.style.display === 'block' && !popup.contains(e.target) && !e.target.classList.contains('clickable-word')) closePopup(); });
+
+    function openLibrary() { document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-input').classList.remove('flex'); document.getElementById('view-library').classList.remove('hidden'); document.getElementById('view-library').classList.add('flex'); loadLibrary(); }
+    function openWordBank() { document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-input').classList.remove('flex'); document.getElementById('view-wordbank').classList.remove('hidden'); document.getElementById('view-wordbank').classList.add('flex'); loadWordBank(); }
+    
+    function loadLibrary() {
+        callApi('getArticles', { userId: getUserId() }).then(res => {
+             const list = document.getElementById('library-list');
+             if(!res.data.length) list.innerHTML='<p class="text-center text-gray-400 mt-4">尚無收藏文章。</p>';
+             else list.innerHTML = res.data.map(art => `<div class="bg-gray-50 p-4 rounded-xl border border-gray-100 flex justify-between items-center group cursor-pointer hover:bg-white hover:shadow-md transition" onclick="readArchivedArticle('${art.title}', '${escape(art.content)}', '${escape(art.contentChn)}')"><div><h3 class="font-bold text-indigo-700 font-eng text-lg">${art.title}</h3><p class="text-xs text-gray-400 mt-1">${new Date(art.date).toLocaleDateString()}</p></div><button onclick="event.stopPropagation(); delArticle('${art.id}', this)" class="text-gray-300 hover:text-red-500 p-2">🗑️</button></div>`).join('');
+        });
+    }
+    function readArchivedArticle(title, contentEscaped, contentChnEscaped) { document.getElementById('view-library').classList.add('hidden'); document.getElementById('view-library').classList.remove('flex'); currentArticleTitle = title; currentArticleText = unescape(contentEscaped); currentArticleChinese = unescape(contentChnEscaped); showReviewPage(true); }
+    function delArticle(id, btn) { if(confirm("確定刪除此文章?")) callApi('delArticle', { userId: getUserId(), id }).then(()=>btn.closest('div').remove()); }
+
+    function loadWordBank() {
+        callApi('getVocab', { userId: getUserId() }).then(res => {
+             const list = document.getElementById('wordbank-list');
+             if(!res.data.length) list.innerHTML='<p class="text-center text-gray-400 mt-4">尚無生字。</p>';
+             else list.innerHTML = res.data.map(w => `<div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-3"><div class="flex justify-between items-start mb-2"><div class="flex items-center gap-2"><span class="text-xl font-bold text-indigo-700 cursor-pointer hover:text-indigo-900" onclick="speak('${w.word.replace(/'/g, "\\'")}')">🔊 ${w.word}</span><span class="text-sm font-mono text-gray-500 bg-white px-1 rounded border border-gray-200">${w.ipa}</span></div><button onclick="delWord('${w.id}',this)" class="text-gray-300 hover:text-red-500 p-1">🗑️</button></div><p class="text-gray-700 font-chn mb-3 font-bold border-b border-gray-200 pb-2">${w.def}</p><div class="bg-white p-3 rounded-lg border border-gray-100 text-sm"><p class="text-gray-800 font-eng mb-1 cursor-pointer hover:text-indigo-600 transition" onclick="speak('${w.context.replace(/'/g, "&#39;")}')">🔊 ${w.context}</p><p class="text-gray-500 font-chn text-xs mt-1">${w.contextChn || "..."}</p></div></div>`).join('');
+        });
+    }
+    
+    async function saveWord(w, i, d, ctxEscaped, ctxChnEscaped, btn) {
+        btn.innerText="✓"; btn.disabled=true; 
+        try {
+            await callApi('saveVocab', { userId: getUserId(), word: w, ipa: i, def: d, ctx: unescape(ctxEscaped), ctxChn: unescape(ctxChnEscaped) });
+            const res = await callApi('addCoins', { userId: getUserId(), amount: 20 });
+            if (res.status === 'success') updateGardenUI(res.data);
+        } catch(e) { console.error("儲存失敗", e); }
+    }
+    function delWord(id,btn){ if(confirm("確定刪除?")) callApi('delVocab',{userId:getUserId(),id}).then(()=>btn.closest('div.bg-gray-50').remove()); }
+
+    function playFullArticle() {
+        if(isPlayingFull){ stopFullAudio(); return; }
+        isPlayingFull = true; document.getElementById('btn-read-all').innerText='🛑 停止朗讀'; 
+        window.speechSynthesis.cancel(); utteranceQueue = (currentArticleTitle + ". " + currentArticleText).match(/[^.!?,\n]+[.!?,\n]+(\s|$)/g) || [currentArticleTitle + ". " + currentArticleText]; playQueue(0);
+    }
+    function playQueue(index) {
+        if (!isPlayingFull || index >= utteranceQueue.length) { stopFullAudio(); return; }
+        const txt = utteranceQueue[index].trim(); if(!txt) { playQueue(index+1); return; }
+        const u = new SpeechSynthesisUtterance(txt); u.lang = 'en-US'; u.rate = parseFloat(document.getElementById('input-rate').value); u.pitch = parseFloat(document.getElementById('input-pitch').value);
+        const v = voices[document.getElementById('input-voice').value]; if(v)u.voice=v;
+        u.onend = function() { if(isPlayingFull) setTimeout(() => { playQueue(index + 1); }, txt.match(/[.!?]$/) ? 800 : 300); };
+        window.speechSynthesis.speak(u);
+    }
+    function stopFullAudio(){ window.speechSynthesis.cancel(); isPlayingFull=false; const btn = document.getElementById('btn-read-all'); if(btn) btn.innerText='🔊 全文朗讀'; }
+
+    init();
+  </script>
 </body>
 </html>
