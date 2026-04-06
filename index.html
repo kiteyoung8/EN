@@ -505,68 +505,56 @@
         }
     }
 
-    function playFullArticle() {
-        if(isPlayingFull){ stopFullAudio(); return; }
+    async function playFullArticle() {
+        if (isPlayingFull) { stopFullAudio(); return; }
         isPlayingFull = true; 
-        document.getElementById('btn-read-all').innerText='🛑 停止朗讀'; 
+        document.getElementById('btn-read-all').innerText = '🛑 停止朗讀'; 
         if (currentAudio) { currentAudio.pause(); } 
         window.speechSynthesis.cancel();
         
-        // ⚡ 終極解法：不依賴符號切句了！直接把「標題」和「字卡裡的每一句」塞進佇列，保證 100% 準確！
-        utteranceQueue = [currentArticleTitle];
-        if (currentCards && currentCards.length > 0) {
-            currentCards.forEach(c => {
-                if (c.english) utteranceQueue.push(c.english);
-            });
-        } else if (currentArticleText) {
-            // 如果是舊文章沒有字卡，才用簡單的空白與句號切分
-            utteranceQueue = [currentArticleTitle, ...currentArticleText.split(/(?<=[.!?])\s+/)];
-        }
-        
-        playQueue(0);
-    }
-
-    async function playQueue(index) {
-        if (!isPlayingFull || index >= utteranceQueue.length) { stopFullAudio(); return; }
-        const txt = utteranceQueue[index].trim(); 
-        
-        // 如果這句是空的，直接跳下一句
-        if(!txt) { playQueue(index + 1); return; }
-        
+        // ⚡ 直接把標題與全文合併成一包 (加上適當的標點符號讓 AI 換氣)
+        const fullText = currentArticleTitle + "。 " + currentArticleText;
         const voice = document.getElementById('input-voice').value; 
         const rate = parseFloat(document.getElementById('input-rate').value) || 1.0;
         
         try {
+            // 🚀 一次性向 Google 要整篇文章的音檔，完全消滅句與句之間的網路延遲！
             const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${FRONTEND_TTS_KEY}`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ input: { text: txt }, voice: { languageCode: "en-US", name: voice }, audioConfig: { audioEncoding: "MP3" } })
+                body: JSON.stringify({ input: { text: fullText }, voice: { languageCode: "en-US", name: voice }, audioConfig: { audioEncoding: "MP3" } })
             });
             
             if (!response.ok) throw new Error("API 回應錯誤");
             const data = await response.json();
             
             if (data.audioContent && isPlayingFull) {
-                if (currentAudio) currentAudio.pause();
                 currentAudio = new Audio("data:audio/mp3;base64," + data.audioContent); 
                 currentAudio.playbackRate = rate;
                 
-                // 成功播完，延遲 0.5 秒後唸下一句
-                currentAudio.onended = () => { if(isPlayingFull) setTimeout(() => { playQueue(index + 1); }, 500); };
-                
-                // 🛡️ 防卡死機制：如果這句音檔載入失敗，立刻跳下一句，不要讓系統當機！
-                currentAudio.onerror = () => { console.error("音檔播放錯誤，跳下一句"); if(isPlayingFull) playQueue(index + 1); };
+                // 播完後自動停止
+                currentAudio.onended = () => { stopFullAudio(); };
+                currentAudio.onerror = () => { console.error("音檔播放錯誤"); stopFullAudio(); };
                 
                 await currentAudio.play();
             } else {
                 throw new Error("無語音內容");
             }
         } catch(e) {
-            console.warn("TTS 直連失敗，啟動備用發音：", e);
-            const u = new SpeechSynthesisUtterance(txt); u.lang = 'en-US'; u.rate = rate;
-            u.onend = function() { if(isPlayingFull) setTimeout(() => { playQueue(index + 1); }, 500); };
-            u.onerror = function() { if(isPlayingFull) playQueue(index + 1); }; // 備用發音出錯也跳下一句
+            console.warn("TTS 整文直連失敗，啟動備用發音：", e);
+            const u = new SpeechSynthesisUtterance(fullText); 
+            u.lang = 'en-US'; u.rate = rate;
+            u.onend = function() { stopFullAudio(); };
+            u.onerror = function() { stopFullAudio(); };
             window.speechSynthesis.speak(u);
         }
+    }
+
+    function stopFullAudio() { 
+        isPlayingFull = false; 
+        if (currentAudio) currentAudio.pause(); 
+        window.speechSynthesis.cancel(); 
+        const btn = document.getElementById('btn-read-all'); 
+        if(btn) btn.innerText = '🔊 全文朗讀'; 
     }
     function stopFullAudio(){ isPlayingFull=false; if (currentAudio) currentAudio.pause(); window.speechSynthesis.cancel(); const btn = document.getElementById('btn-read-all'); if(btn) btn.innerText='🔊 全文朗讀'; }
 
