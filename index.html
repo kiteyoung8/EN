@@ -509,7 +509,11 @@
         if(isPlayingFull){ stopFullAudio(); return; }
         isPlayingFull = true; document.getElementById('btn-read-all').innerText='🛑 停止朗讀'; 
         if (currentAudio) { currentAudio.pause(); } window.speechSynthesis.cancel();
-        utteranceQueue = (currentArticleTitle + ". " + currentArticleText).match(/[^.!?,\n]+[.!?,\n]+(\s|$)/g) || [currentArticleTitle + ". " + currentArticleText];
+        
+        // ⚡ 修正：使用更安全的斷句邏輯，確保所有內容都不會被遺漏
+        let fullText = currentArticleTitle + ". " + currentArticleText;
+        utteranceQueue = fullText.match(/[^.!?\n]+[.!?\n]*/g) || [fullText];
+        
         playQueue(0);
     }
 
