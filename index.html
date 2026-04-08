@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GemArticle - Formosa LinguaGarden v2.0 (極速版)</title>
+  <title>GemArticle - Formosa LinguaGarden v3.0 (AI聽力極速版)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   
@@ -75,7 +75,7 @@
         <button onclick="openWordBank()" class="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full transition" title="我的生字本"><span class="text-xl">📚</span></button>
       </div>
       
-      <!-- 頂部資訊區 (雙軌制：顯示錢包餘額) -->
+      <!-- 頂部資訊區 -->
       <div class="absolute top-4 left-4 flex gap-2 items-center flex-wrap">
         <span id="display-user" class="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">Guest</span>
         <button onclick="handleLogout()" class="text-xs text-red-400 hover:underline">登出</button>
@@ -206,10 +206,11 @@
             <div class="flex justify-between items-center w-full max-w-sm mb-3">
                 <button onclick="requestHint()" class="w-10 h-10 bg-yellow-50 border border-yellow-200 hover:bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-lg shadow-sm transition transform active:scale-95" title="求救">💡</button>
                 <div class="flex flex-col items-center">
-                    <p id="chat-status" class="text-[10px] text-gray-400 font-bold mb-1 uppercase tracking-wider">點擊麥克風 / 或輸入文字</p>
+                    <p id="chat-status" class="text-[10px] text-gray-400 font-bold mb-1 uppercase tracking-wider">點擊麥克風錄音</p>
                     <button id="btn-chat-mic" onclick="toggleChatMic()" class="w-14 h-14 bg-indigo-600 hover:bg-indigo-700 rounded-full flex items-center justify-center text-2xl text-white shadow-xl transition-all">🎤</button>
                 </div>
-                <button id="btn-mic-lang" onclick="toggleMicLang()" class="w-10 h-10 flex flex-col items-center justify-center bg-gray-50 border border-gray-200 hover:bg-gray-100 rounded-full text-[10px] font-bold text-gray-500 shadow-sm transition" title="切換語言"><span id="mic-lang-icon" class="text-sm">🇺🇸</span></button>
+                <!-- 移除了語言切換按鈕，因為 Gemini AI 會自動偵測語言！ -->
+                <div class="w-10 h-10"></div> 
             </div>
             <div class="w-full max-w-sm flex gap-2">
                 <input type="text" id="chat-text-input" class="flex-grow px-4 py-2 border border-gray-300 rounded-full outline-none focus:border-indigo-500 text-sm shadow-inner" placeholder="輸入英文或中文回覆..." onkeypress="handleChatKeyPress(event)">
@@ -325,7 +326,7 @@
     </div>
   </div>
 
-  <!-- 🪴 懸浮盆栽按鈕與圖鑑轉蛋 Modal v2.0 -->
+  <!-- 🪴 懸浮盆栽按鈕與圖鑑轉蛋 Modal -->
   <div id="plant-pot-btn" onclick="openPlantModal()" title="我的圖鑑溫室" class="fixed bottom-6 right-6 w-16 h-16 bg-white rounded-full border-4 border-green-100 shadow-xl flex items-center justify-center cursor-pointer z-40 transition transform hover:scale-110">
      <span class="text-4xl pixel-art">🪴</span>
   </div>
@@ -334,7 +335,7 @@
       <div id="plant-card" class="bg-white w-[90%] max-w-[360px] rounded-3xl p-6 shadow-2xl relative text-center" onclick="event.stopPropagation()">
           <button onclick="closePlantModal(event)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10">✕</button>
           
-          <!-- 切換頁籤：溫室 vs 圖鑑 vs 排行 -->
+          <!-- 切換頁籤 -->
           <div class="flex justify-center gap-2 border-b border-gray-100 pb-2 mb-4">
               <button onclick="togglePlantTab('greenhouse')" id="tab-btn-greenhouse" class="text-sm font-bold text-green-600 border-b-2 border-green-600 pb-1 px-1 transition">🪴 溫室</button>
               <button onclick="togglePlantTab('encyclopedia')" id="tab-btn-encyclopedia" class="text-sm font-bold text-gray-400 pb-1 px-1 hover:text-green-600 transition">📖 圖鑑</button>
@@ -405,10 +406,8 @@
 
   <!-- 🚀 核心 JavaScript 邏輯 -->
   <script>
-    // 🚨🚨🚨 重要：請在此處貼上你 Google Apps Script 最新部署的網址 🚨🚨🚨
+    // 🚨 保持您原本的網址與金鑰
     const API_URL = "https://script.google.com/macros/s/AKfycbzTciZ2Z7Xrmc8IrV-VHqmJMT6rdbnnIbnE1j6YYKDv3yC3Av0fvofThL6pBmvj_GP0MQ/exec"; 
-    
-    // 🚨🚨🚨 重要：請在此處貼上你的 Google TTS API 金鑰 🚨🚨🚨
     const FRONTEND_TTS_KEY = "AIzaSyC0K2LUisFnF53ka3ZQbZqiyaWZT1Rk0LI";
 
     // 全局變數
@@ -418,12 +417,12 @@
     let utteranceQueue = [];
     const DEFAULT_RATE = 1.0;
 
-    let chatRecognition = null, isChatRecording = false, chatHistoryText = "";
+    // v3.0 新增：錄音相關變數
+    let mediaRecorder = null, audioChunks = [], isChatRecording = false, chatHistoryText = "";
     let currentSpeakScenario = "", currentSpeakMission = "";
     let shadowRecognition = null, isShadowRecording = false;
-    let currentMicLang = 'en-US'; 
 
-    // 🌱 台灣原生植物圖鑑庫 (前端鏡像)
+    // 🌱 台灣原生植物圖鑑庫
     const NATIVE_PLANT_DB = [
       { name: "黃花風鈴木", rarity: "Starter", emoji: "🌼", costToMax: 500 },
       { name: "馬鞍藤", rarity: "N", emoji: "🌱", costToMax: 100 },
@@ -442,13 +441,13 @@
         const savedUser = localStorage.getItem('gem_username');
         if (savedUser) {
             currentUserId = savedUser; document.getElementById('display-user').innerText = currentUserId;
-            await refreshUserStats(); // 登入時讀取雙軌狀態
+            await refreshUserStats(); 
             document.getElementById('view-login').classList.add('hidden');
             document.getElementById('view-input').classList.remove('hidden'); document.getElementById('view-input').classList.add('flex');
         } else { document.getElementById('view-login').classList.remove('hidden'); }
         
         document.getElementById('input-rate').value = DEFAULT_RATE;
-        initSpeechRecognition(); initShadowRecognition(); 
+        initShadowRecognition(); 
     }
 
     function handleLogin() {
@@ -459,19 +458,15 @@
     }
     function handleLogout() { localStorage.removeItem('gem_username'); location.reload(); }
     function getUserId() { if (!currentUserId) throw new Error("請先登入"); return currentUserId; }
-
     document.getElementById('input-rate').addEventListener('input', () => { document.getElementById('speed-val').innerText = document.getElementById('input-rate').value; });
 
-    // 浮動提示框功能
     function showToast(msg) {
         const toast = document.getElementById('reward-toast');
         toast.innerText = msg; toast.style.display = 'block';
         setTimeout(() => { toast.style.display = 'none'; }, 3000);
     }
 
-    // ==========================================
-    // ⚡ 閃電極速版真人發音引擎 (Bypass GAS 直接呼叫 TTS)
-    // ==========================================
+    // ⚡ 閃電極速版真人發音引擎 (TTS)
     async function speak(txt) { 
         if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
         window.speechSynthesis.cancel(); 
@@ -481,26 +476,16 @@
         
         try {
             const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${FRONTEND_TTS_KEY}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    input: { text: txt },
-                    voice: { languageCode: "en-US", name: voice },
-                    audioConfig: { audioEncoding: "MP3" }
-                })
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ input: { text: txt }, voice: { languageCode: "en-US", name: voice }, audioConfig: { audioEncoding: "MP3" } })
             });
-
             const data = await response.json();
-
             if (data.audioContent) {
                 currentAudio = new Audio("data:audio/mp3;base64," + data.audioContent);
                 currentAudio.playbackRate = rate; 
                 currentAudio.play();
-            } else {
-                throw new Error("API 沒回傳聲音");
-            }
+            } else { throw new Error("API 沒回傳聲音"); }
         } catch (e) {
-            console.error("極速真人發音失敗，切換為備用系統:", e);
             const u = new SpeechSynthesisUtterance(txt); u.lang = 'en-US'; u.rate = rate; window.speechSynthesis.speak(u); 
         }
     }
@@ -512,55 +497,34 @@
         if (currentAudio) { currentAudio.pause(); } 
         window.speechSynthesis.cancel();
         
-        // ⚡ 直接把標題與全文合併成一包 (加上適當的標點符號讓 AI 換氣)
         const fullText = currentArticleTitle + "。 " + currentArticleText;
         const voice = document.getElementById('input-voice').value; 
         const rate = parseFloat(document.getElementById('input-rate').value) || 1.0;
         
         try {
-            // 🚀 一次性向 Google 要整篇文章的音檔，完全消滅句與句之間的網路延遲！
             const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${FRONTEND_TTS_KEY}`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ input: { text: fullText }, voice: { languageCode: "en-US", name: voice }, audioConfig: { audioEncoding: "MP3" } })
             });
-            
             if (!response.ok) throw new Error("API 回應錯誤");
             const data = await response.json();
             
             if (data.audioContent && isPlayingFull) {
                 currentAudio = new Audio("data:audio/mp3;base64," + data.audioContent); 
                 currentAudio.playbackRate = rate;
-                
-                // 播完後自動停止
                 currentAudio.onended = () => { stopFullAudio(); };
                 currentAudio.onerror = () => { console.error("音檔播放錯誤"); stopFullAudio(); };
-                
                 await currentAudio.play();
-            } else {
-                throw new Error("無語音內容");
-            }
+            } else { throw new Error("無語音內容"); }
         } catch(e) {
-            console.warn("TTS 整文直連失敗，啟動備用發音：", e);
             const u = new SpeechSynthesisUtterance(fullText); 
-            u.lang = 'en-US'; u.rate = rate;
-            u.onend = function() { stopFullAudio(); };
-            u.onerror = function() { stopFullAudio(); };
+            u.lang = 'en-US'; u.rate = rate; u.onend = function() { stopFullAudio(); }; u.onerror = function() { stopFullAudio(); };
             window.speechSynthesis.speak(u);
         }
     }
 
-    function stopFullAudio() { 
-        isPlayingFull = false; 
-        if (currentAudio) currentAudio.pause(); 
-        window.speechSynthesis.cancel(); 
-        const btn = document.getElementById('btn-read-all'); 
-        if(btn) btn.innerText = '🔊 全文朗讀'; 
-    }
     function stopFullAudio(){ isPlayingFull=false; if (currentAudio) currentAudio.pause(); window.speechSynthesis.cancel(); const btn = document.getElementById('btn-read-all'); if(btn) btn.innerText='🔊 全文朗讀'; }
 
-    // ==========================================
-    // API 呼叫包裝與畫面切換
-    // ==========================================
     async function callApi(action, params) {
       try {
         const res = await fetch(API_URL, { method: "POST", body: JSON.stringify({ action, ...params }) });
@@ -572,7 +536,7 @@
 
     function goBackToMenu() {
       stopFullAudio();
-      if(isChatRecording && chatRecognition) chatRecognition.stop();
+      if(isChatRecording && mediaRecorder) { mediaRecorder.stop(); mediaRecorder.stream.getTracks().forEach(t => t.stop()); }
       if(isShadowRecording && shadowRecognition) shadowRecognition.stop();
       ['view-cards', 'view-review', 'view-wordbank', 'view-library', 'view-speak'].forEach(id => { document.getElementById(id).classList.remove('flex'); document.getElementById(id).classList.add('hidden'); });
       document.getElementById('view-input').classList.remove('hidden'); document.getElementById('view-input').classList.add('flex');
@@ -586,35 +550,30 @@
     }
 
     // ==========================================
-    // 🌱 像素原生植物、圖鑑、排行榜 v2.0
+    // 🌱 遊戲化圖鑑與溫室機制
     // ==========================================
     async function refreshUserStats() {
         try {
             const res = await callApi('getUserStats', { userId: getUserId() });
             if (res.status === 'success') { updateGardenUI(res.data); document.getElementById('coin-display').classList.remove('hidden'); }
-        } catch(e) { console.error("讀取狀態失敗", e); }
+        } catch(e) {}
     }
 
     function updateGardenUI(data) {
         if (userStats.plantStage === 3 && data.plantStage === 4) triggerBloomCelebration(data.currentPlant);
         userStats = data;
-        
-        document.getElementById('user-coins').innerText = userStats.coins; // 💰 錢包
+        document.getElementById('user-coins').innerText = userStats.coins; 
         document.getElementById('current-plant-name').innerText = userStats.currentPlant;
-        
         const plantInfo = NATIVE_PLANT_DB.find(p => p.name === userStats.currentPlant) || { emoji: '🌼', costToMax: 500 };
         const maxEXP = plantInfo.costToMax;
-        
-        document.getElementById('plant-coins-status').innerText = `${userStats.exp} / ${maxEXP} 🌞`; // 使用 EXP
+        document.getElementById('plant-coins-status').innerText = `${userStats.exp} / ${maxEXP} 🌞`; 
         document.getElementById('plant-progress-bar').style.width = `${Math.min((userStats.exp / maxEXP) * 100, 100)}%`;
-        
         const genericStages = ['🟫', '🌱', '🌳', '🍂', plantInfo.emoji];
         document.getElementById('plant-visual').innerHTML = genericStages[userStats.plantStage] || '🟫';
-
         const tipsEl = document.getElementById('plant-tips');
         if (userStats.plantStage === 4) tipsEl.innerText = "🏆 恭喜！植物已燦爛盛開！快去圖鑑抽下一顆種子吧！";
         else if (userStats.plantStage === 3) tipsEl.innerText = "綠葉掉光不是死掉，是在醞釀最美的盛開。";
-        else tipsEl.innerText = "每次勇敢開口跟讀，都能加速植物生長喔！";
+        else tipsEl.innerText = "每次勇敢開口，都能加速植物生長喔！";
     }
 
     function togglePlantTab(tab) {
@@ -650,8 +609,7 @@
                 resultDiv.innerText = `🎉 獲得 [${plant.rarity}] ${plant.name} ${plant.emoji} !`;
                 resultDiv.className = "text-sm font-bold text-green-600 mb-3 animate-bounce";
                 if (!userStats.unlockedPlants.includes(plant.name)) userStats.unlockedPlants.push(plant.name);
-                
-                if(confirm(`恭喜抽到 ${plant.name}！是否要將溫室的盆栽換成它？\n(注意：換盆會重置植物生長經驗，但不會扣除錢包金幣)`)) {
+                if(confirm(`恭喜抽到 ${plant.name}！是否要將溫室的盆栽換成它？\n(注意：換盆會重置經驗，但不會扣除金幣)`)) {
                     const changeRes = await callApi('changePlant', { userId: getUserId(), plantName: plant.name });
                     if(changeRes.status === 'success') updateGardenUI(changeRes.data);
                 }
@@ -668,22 +626,17 @@
             const rarityColors = { 'Starter': 'text-gray-500 bg-gray-100', 'N': 'text-green-600 bg-green-50', 'R': 'text-blue-600 bg-blue-50', 'SR': 'text-purple-600 bg-purple-50', 'SSR': 'text-yellow-600 bg-yellow-50' };
             return `<div class="bg-gray-50 border border-gray-100 p-2 rounded-lg flex justify-between items-center cursor-pointer hover:bg-green-50 transition" onclick="showPlantLore('${name}')" title="點擊看科普故事">
                         <span class="text-sm font-bold text-gray-700">${info.emoji} ${name}</span>
-                        <div class="flex items-center gap-2">
-                           <span class="text-xs text-gray-400">📖</span>
-                           <span class="text-[10px] font-bold px-2 py-0.5 rounded ${rarityColors[info.rarity] || 'text-gray-500'}">${info.rarity}</span>
-                        </div>
+                        <div class="flex items-center gap-2"><span class="text-xs text-gray-400">📖</span><span class="text-[10px] font-bold px-2 py-0.5 rounded ${rarityColors[info.rarity] || 'text-gray-500'}">${info.rarity}</span></div>
                     </div>`;
         }).join('');
     }
 
-    // 📖 AI 植物圖鑑科普
     async function showPlantLore(plantName) {
         const modal = document.getElementById('plant-lore-modal');
         document.getElementById('lore-title').innerText = `✨ ${plantName}`;
         document.getElementById('lore-content').innerText = "AI 正在為您撰寫植物故事...";
         document.getElementById('lore-content-chn').innerText = "";
         modal.classList.remove('hidden'); modal.classList.add('flex');
-        
         try {
             const res = await callApi('getPlantLore', { plantName: plantName });
             if (res.status === 'success') {
@@ -694,7 +647,6 @@
         } catch(e) { document.getElementById('lore-content').innerText = "連線錯誤。"; }
     }
 
-    // 🏆 班級排行榜
     async function loadLeaderboard() {
         const listEl = document.getElementById('leaderboard-list');
         listEl.innerHTML = '<p class="text-center text-gray-400 text-xs mt-10">載入排行中...</p>';
@@ -705,15 +657,8 @@
                     const medals = ['🥇','🥈','🥉']; const rank = index < 3 ? medals[index] : `<span class="text-gray-400 w-5 inline-block text-center">${index+1}</span>`;
                     const info = NATIVE_PLANT_DB.find(p => p.name === user.currentPlant) || { emoji: '🪴' };
                     return `<div class="bg-gray-50 border border-gray-100 p-2 rounded-lg flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                   <span class="text-sm">${rank}</span>
-                                   <span class="text-sm font-bold text-gray-700 truncate max-w-[80px]">${user.user}</span>
-                                </div>
-                                <div class="flex items-center gap-3 text-xs font-bold text-gray-500">
-                                   <span title="溫室目前種植">${info.emoji}</span>
-                                   <span class="text-indigo-600 bg-indigo-50 px-1.5 rounded" title="圖鑑收集數">📖 ${user.unlockedCount}</span>
-                                   <span class="text-yellow-600" title="總金幣">💰 ${user.coins}</span>
-                                </div>
+                                <div class="flex items-center gap-2"><span class="text-sm">${rank}</span><span class="text-sm font-bold text-gray-700 truncate max-w-[80px]">${user.user}</span></div>
+                                <div class="flex items-center gap-3 text-xs font-bold text-gray-500"><span title="溫室目前種植">${info.emoji}</span><span class="text-indigo-600 bg-indigo-50 px-1.5 rounded">📖 ${user.unlockedCount}</span><span class="text-yellow-600">💰 ${user.coins}</span></div>
                             </div>`;
                 }).join('');
             } else { listEl.innerHTML = '<p class="text-center text-gray-400 text-xs mt-10">目前尚無排行資料。</p>'; }
@@ -721,37 +666,22 @@
     }
 
     // ==========================================
-    // 🗣️ Speak Mode (RPG 任務引擎、雙語家教)
+    // 🗣️ Speak Mode v3.0 (使用 MediaRecorder 錄音上傳給 Gemini)
     // ==========================================
     function toggleCustomScenario() {
         const select = document.getElementById('input-speak-scenario');
         const customInput = document.getElementById('input-custom-scenario');
         if (select.value === 'custom') { customInput.classList.remove('hidden'); customInput.focus(); } else { customInput.classList.add('hidden'); }
     }
-    function toggleMicLang() {
-        const icon = document.getElementById('mic-lang-icon');
-        if (currentMicLang === 'en-US') { currentMicLang = 'cmn-Hant-TW'; icon.innerText = '🇹🇼'; } else { currentMicLang = 'en-US'; icon.innerText = '🇺🇸'; }
-        if (chatRecognition) chatRecognition.lang = currentMicLang;
-    }
+
     async function sendChatText() {
         const inputEl = document.getElementById('chat-text-input'); const text = inputEl.value.trim();
-        if (!text) return; inputEl.value = ''; appendChatMessage('user', text); await handleChatTurn(text);
+        if (!text) return; inputEl.value = ''; appendChatMessage('user', text); await handleChatTurnText(text);
     }
     function handleChatKeyPress(e) { if (e.key === 'Enter') sendChatText(); }
 
-    function initSpeechRecognition() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            chatRecognition = new SpeechRecognition(); chatRecognition.lang = currentMicLang; chatRecognition.continuous = false; chatRecognition.interimResults = false;
-            chatRecognition.onstart = () => { isChatRecording = true; document.getElementById('btn-chat-mic').classList.add('mic-active'); document.getElementById('chat-status').innerText = `聆聽中... (${currentMicLang === 'en-US' ? 'EN' : '中文'})`; document.getElementById('chat-status').classList.replace('text-gray-400', 'text-red-500'); };
-            chatRecognition.onresult = async (event) => { const text = event.results[0][0].transcript; appendChatMessage('user', text); await handleChatTurn(text); };
-            chatRecognition.onerror = () => { stopChatMicUI(); document.getElementById('chat-status').innerText = "請再試一次"; };
-            chatRecognition.onend = () => { stopChatMicUI(); };
-        }
-    }
-
     async function initSpeakMode() {
-        if(!chatRecognition) return alert("您的瀏覽器不支援語音功能。");
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return alert("您的瀏覽器不支援錄音功能。");
         const scenarioSelect = document.getElementById('input-speak-scenario'); const difficultySelect = document.getElementById('input-speak-difficulty').value;
         let displayTitle = "", baseScenario = "";
         
@@ -800,51 +730,114 @@
         try {
             const res = await callApi('speak_mode', { userInput: "(Please start the conversation.)", history: "", scenario: currentSpeakScenario, mission: currentSpeakMission });
             appendChatMessage('ai', res.data.reply, res.data.reply_chn); speak(res.data.reply); chatHistoryText += `AI: ${res.data.reply}\n`;
-        } catch (err) { appendChatMessage('ai', "連線失敗，請重試。"); } finally { document.getElementById('chat-status').innerText = "點擊麥克風 / 或輸入文字"; }
+        } catch (err) { appendChatMessage('ai', "連線失敗，請重試。"); } finally { document.getElementById('chat-status').innerText = "點擊麥克風錄音"; }
     }
 
-    function toggleChatMic() {
-        if (!chatRecognition) return alert("瀏覽器不支援語音。");
-        if (isChatRecording) { chatRecognition.stop(); } else { window.speechSynthesis.cancel(); try { chatRecognition.start(); } catch(e) {} }
+    // ⚡ v3.0 全新錄音機制 (取代原本瀏覽器的陽春麥克風)
+    async function toggleChatMic() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return alert("瀏覽器不支援錄音。");
+        
+        if (isChatRecording) {
+            mediaRecorder.stop();
+        } else {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+
+                mediaRecorder.onstart = () => {
+                    isChatRecording = true;
+                    document.getElementById('btn-chat-mic').classList.add('mic-active');
+                    document.getElementById('chat-status').innerText = "🔴 錄音中... (講完請再點一次結束)";
+                    document.getElementById('chat-status').classList.replace('text-gray-400', 'text-red-500');
+                    window.speechSynthesis.cancel();
+                    if(currentAudio) currentAudio.pause();
+                };
+
+                mediaRecorder.onstop = async () => {
+                    stopChatMicUI();
+                    document.getElementById('chat-status').innerText = "正在把聲音傳給 AI...";
+                    
+                    const mimeType = mediaRecorder.mimeType || 'audio/webm';
+                    const audioBlob = new Blob(audioChunks, { type: mimeType });
+                    
+                    const reader = new FileReader();
+                    reader.readAsDataURL(audioBlob);
+                    reader.onloadend = async () => {
+                        const base64data = reader.result.split(',')[1];
+                        await sendAudioTurn(base64data, mimeType);
+                    };
+                    
+                    // 釋放麥克風資源
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorder.start();
+            } catch (err) {
+                console.error("麥克風存取失敗:", err);
+                alert("無法存取麥克風，請確認網址列旁邊的鎖頭圖示，並允許麥克風權限！");
+            }
+        }
     }
 
     function stopChatMicUI() {
-        isChatRecording = false; document.getElementById('btn-chat-mic').classList.remove('mic-active'); document.getElementById('chat-status').innerText = "點擊麥克風 / 或輸入文字"; document.getElementById('chat-status').classList.replace('text-red-500', 'text-gray-400');
+        isChatRecording = false; document.getElementById('btn-chat-mic').classList.remove('mic-active'); document.getElementById('chat-status').innerText = "點擊麥克風錄音"; document.getElementById('chat-status').classList.replace('text-red-500', 'text-gray-400');
     }
 
-    async function handleChatTurn(userText) {
+    // ⚡ 處理「純文字」的回覆
+    async function handleChatTurnText(userText) {
         document.getElementById('chat-status').innerText = "AI 思考中...";
         try {
             const res = await callApi('speak_mode', { userInput: userText, history: chatHistoryText, scenario: currentSpeakScenario, mission: currentSpeakMission });
+            processAiResponse(res.data, userText);
+        } catch (err) { appendChatMessage('ai', "抱歉，發生錯誤。"); } finally { if(!isChatRecording) document.getElementById('chat-status').innerText = "點擊麥克風錄音"; }
+    }
+
+    // ⚡ 處理「錄音」的回覆 (呼叫新的後端 API)
+    async function sendAudioTurn(base64Audio, mimeType) {
+        document.getElementById('chat-status').innerText = "AI 正在聆聽與思考中...";
+        try {
+            const res = await callApi('speak_mode_audio', { 
+                audioData: base64Audio, mimeType: mimeType, history: chatHistoryText, scenario: currentSpeakScenario, mission: currentSpeakMission 
+            });
             const data = res.data;
             
-            if (data.mission_cleared === true) {
-                const statusEl = document.getElementById('mission-status');
-                if(statusEl.innerText !== "🎉 MISSION CLEARED") {
-                    statusEl.innerText = "🎉 MISSION CLEARED"; statusEl.className = "text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded border border-green-300 animate-pulse";
-                    data.feedback = "🏆 **太神啦！任務達成！**\n" + (data.feedback || "");
-                    
-                    // 💰 任務達成雙軌獎勵：+50 EXP, +50 Coins
-                    await callApi('addReward', { userId: getUserId(), exp: 50, coins: 50 });
-                    showToast('任務達成！+50 🌞 +50 💰');
-                    refreshUserStats();
-                }
+            // 把 AI 聽到的內容顯示在畫面上
+            const userTranscript = data.user_transcript || "(聽不清楚您的聲音)";
+            appendChatMessage('user', "🗣️ " + userTranscript);
+            
+            processAiResponse(data, userTranscript);
+        } catch (err) { appendChatMessage('ai', "聲音辨識發生錯誤，請重試。"); } finally { if(!isChatRecording) document.getElementById('chat-status').innerText = "點擊麥克風錄音"; }
+    }
+
+    // 共用的 AI 回應處理邏輯
+    async function processAiResponse(data, userText) {
+        if (data.mission_cleared === true) {
+            const statusEl = document.getElementById('mission-status');
+            if(statusEl.innerText !== "🎉 MISSION CLEARED") {
+                statusEl.innerText = "🎉 MISSION CLEARED"; statusEl.className = "text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded border border-green-300 animate-pulse";
+                data.feedback = "🏆 **太神啦！任務達成！**\n" + (data.feedback || "");
+                await callApi('addReward', { userId: getUserId(), exp: 50, coins: 50 });
+                showToast('任務達成！+50 🌞 +50 💰');
+                refreshUserStats();
             }
-            
-            appendChatMessage('ai', data.reply, data.reply_chn); speak(data.reply); 
-            
-            if (data.feedback && data.feedback.trim() !== "" && !data.feedback.toLowerCase().includes("perfect")) {
-                const fbDiv = document.getElementById('chat-feedback');
-                const formattedFeedback = data.feedback.replace(/([a-zA-Z][a-zA-Z\s.,?!']{4,}[a-zA-Z.?!])/g, function(match) { const safeText = match.replace(/'/g, "\\'"); return `<span class="inline-block bg-white border border-indigo-200 text-indigo-700 font-bold cursor-pointer hover:bg-indigo-50 rounded-lg px-2 py-0.5 my-1 shadow-sm transition transform active:scale-95" onclick="speak('${safeText}')" title="點擊發音">🔊 ${match}</span>`; });
-                document.getElementById('feedback-text').innerHTML = formattedFeedback; fbDiv.classList.remove('hidden'); setTimeout(() => { fbDiv.classList.add('hidden'); }, 15000); 
-            } else { document.getElementById('chat-feedback').classList.add('hidden'); }
-            
-            chatHistoryText += `User: ${userText}\nAI: ${data.reply}\n`;
-        } catch (err) { appendChatMessage('ai', "抱歉，發生錯誤。"); } finally { if(!isChatRecording) document.getElementById('chat-status').innerText = "點擊麥克風 / 或輸入文字"; }
+        }
+        
+        appendChatMessage('ai', data.reply, data.reply_chn); speak(data.reply); 
+        
+        if (data.feedback && data.feedback.trim() !== "" && !data.feedback.toLowerCase().includes("perfect")) {
+            const fbDiv = document.getElementById('chat-feedback');
+            const formattedFeedback = data.feedback.replace(/([a-zA-Z][a-zA-Z\s.,?!']{4,}[a-zA-Z.?!])/g, function(match) { const safeText = match.replace(/'/g, "\\'"); return `<span class="inline-block bg-white border border-indigo-200 text-indigo-700 font-bold cursor-pointer hover:bg-indigo-50 rounded-lg px-2 py-0.5 my-1 shadow-sm transition transform active:scale-95" onclick="speak('${safeText}')" title="點擊發音">🔊 ${match}</span>`; });
+            document.getElementById('feedback-text').innerHTML = formattedFeedback; fbDiv.classList.remove('hidden'); setTimeout(() => { fbDiv.classList.add('hidden'); }, 15000); 
+        } else { document.getElementById('chat-feedback').classList.add('hidden'); }
+        
+        chatHistoryText += `User: ${userText}\nAI: ${data.reply}\n`;
     }
 
     async function requestHint() {
-        if (isChatRecording) toggleChatMic(); appendChatMessage('user', "I don't know what to say... 🥺"); await handleChatTurn("(The user needs help. Provide 2-3 short examples of what they could say next.)");
+        if (isChatRecording) toggleChatMic(); appendChatMessage('user', "I don't know what to say... 🥺"); await handleChatTurnText("(The user needs help. Provide 2-3 short examples of what they could say next.)");
     }
 
     function appendChatMessage(role, text, textChn = "") {
@@ -857,9 +850,7 @@
         chatBox.appendChild(div); setTimeout(() => { div.style.opacity = '1'; div.style.transform = 'translateY(0)'; chatBox.scrollTop = chatBox.scrollHeight; }, 50);
     }
 
-    // ==========================================
-    // 發音跟讀 (Shadowing) - v2.0 加入跟讀獎勵！
-    // ==========================================
+    // 發音跟讀 (保留給字卡模式使用，因為只要比對單句文字，還是用內建的比較快)
     function initShadowRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
@@ -870,108 +861,68 @@
             shadowRecognition.onend = () => { isShadowRecording = false; document.getElementById('btn-card-mic').classList.remove('mic-active'); };
         }
     }
-    function toggleCardShadowing(e) {
-        e.stopPropagation(); if (!shadowRecognition) return alert("瀏覽器不支援。");
-        if (isShadowRecording) shadowRecognition.stop(); else { window.speechSynthesis.cancel(); try { shadowRecognition.start(); } catch(e) {} }
-    }
+    function toggleCardShadowing(e) { e.stopPropagation(); if (!shadowRecognition) return alert("瀏覽器不支援。"); if (isShadowRecording) shadowRecognition.stop(); else { window.speechSynthesis.cancel(); try { shadowRecognition.start(); } catch(e) {} } }
+    
     function checkPronunciation(userText) {
-        const currentCard = currentCards[currentIndex];
-        const targetText = currentCard.english;
+        const currentCard = currentCards[currentIndex]; const targetText = currentCard.english;
         const cleanTarget = targetText.toLowerCase().replace(/[^\w\s']/g, '').trim().split(/\s+/);
         const cleanUser = userText.toLowerCase().replace(/[^\w\s']/g, '').trim().split(/\s+/);
         let matchCount = 0; let targetWordsMatched = new Set();
         const coloredUserText = cleanUser.map((uWord) => {
             const matchIdx = cleanTarget.findIndex((tWord, i) => tWord === uWord && !targetWordsMatched.has(i));
-            if (matchIdx !== -1) { matchCount++; targetWordsMatched.add(matchIdx); return `<span class="text-green-400 font-bold">${uWord}</span>`; } 
-            else { return `<span class="text-red-400 line-through opacity-80">${uWord}</span>`; }
+            if (matchIdx !== -1) { matchCount++; targetWordsMatched.add(matchIdx); return `<span class="text-green-400 font-bold">${uWord}</span>`; } else { return `<span class="text-red-400 line-through opacity-80">${uWord}</span>`; }
         }).join(' ');
-        
         const score = Math.round((matchCount / Math.max(cleanTarget.length, 1)) * 100); const cappedScore = Math.min(score, 100);
         document.getElementById('shadowing-result').innerHTML = coloredUserText || "未聽清楚";
         const scoreEl = document.getElementById('shadowing-score'); scoreEl.innerText = cappedScore + "%";
-        
         if (cappedScore >= 80) {
             scoreEl.className = "font-bold text-sm text-green-400";
-            // 💰 跟讀高分獎勵：若此卡尚未領過，發放 10 經驗與 10 金幣
             if (!currentCard.shadowRewarded) {
                 currentCard.shadowRewarded = true;
-                callApi('addReward', { userId: getUserId(), exp: 10, coins: 10 }).then(res => {
-                    if (res.status === 'success') { updateGardenUI(res.data); showToast('發音完美！+10 🌞💰'); }
-                });
+                callApi('addReward', { userId: getUserId(), exp: 10, coins: 10 }).then(res => { if (res.status === 'success') { updateGardenUI(res.data); showToast('發音完美！+10 🌞💰'); } });
             }
-        }
-        else if (cappedScore >= 50) scoreEl.className = "font-bold text-sm text-yellow-400";
-        else scoreEl.className = "font-bold text-sm text-red-400";
+        } else if (cappedScore >= 50) scoreEl.className = "font-bold text-sm text-yellow-400"; else scoreEl.className = "font-bold text-sm text-red-400";
     }
 
-    // 聯網與生成
     function submitExplore() {
-       const query = document.getElementById('input-explore-query').value.trim(); 
-       if(!query) return alert("請輸入想要聯網搜尋的關鍵字");
-       document.getElementById('loading-msg').innerText = "🌐 AI 正在網路上為您蒐集並提煉資料..."; 
-       document.getElementById('loading-msg').classList.remove('hidden');
+       const query = document.getElementById('input-explore-query').value.trim(); if(!query) return alert("請輸入想要聯網搜尋的關鍵字");
+       document.getElementById('loading-msg').innerText = "🌐 AI 正在網路上為您蒐集並提煉資料..."; document.getElementById('loading-msg').classList.remove('hidden');
        startGen('search_web', { query: query, level: document.getElementById('input-explore-level').value });
     }
-
     function submitTopic() {
        const topic=document.getElementById('input-topic').value; if(!topic)return alert("請輸入主題");
        document.getElementById('loading-msg').innerText = "🤖 AI 正在準備中..."; document.getElementById('loading-msg').classList.remove('hidden');
        startGen('generate', { topic, level:document.getElementById('input-level').value, len:document.getElementById('input-len-topic').value, scenario:document.getElementById('input-scenario').value });
     }
     function submitPaste() {
-       const txt = document.getElementById('input-content').value; 
-       if(!txt) return alert("請貼上文章");
-       
-       document.getElementById('loading-msg').innerText = "🤖 AI 正在準備中..."; 
-       document.getElementById('loading-msg').classList.remove('hidden');
-       
-       // ⚡ 修正：直接給定預設長度 'medium'，移除抓取不存在元件的程式碼
-       startGen('import', { 
-           title: document.getElementById('input-title').value, 
-           content: txt, 
-           len: 'medium' 
-       });
+       const txt = document.getElementById('input-content').value; if(!txt) return alert("請貼上文章");
+       document.getElementById('loading-msg').innerText = "🤖 AI 正在準備中..."; document.getElementById('loading-msg').classList.remove('hidden');
+       startGen('import', { title: document.getElementById('input-title').value, content: txt, len: 'medium' });
     }
 
     function startGen(act, data) {
         callApi(act, data).then(res => {
             document.getElementById('loading-msg').classList.add('hidden');
-            currentCards = res.data.cards.map(c => ({...c, shadowRewarded: false})); 
-            currentIndex = 0;
-            currentArticleText = currentCards.map(c => c.english).join(' '); 
-            currentArticleChinese = currentCards.map(c => c.chinese).join('<br><br>');
-            currentArticleTitle = res.data.title || 'Lesson'; 
-            document.getElementById('card-main-title').innerText = currentArticleTitle;
-            
-            document.getElementById('view-input').classList.add('hidden'); 
-            document.getElementById('view-input').classList.remove('flex');
-            document.getElementById('view-cards').classList.remove('hidden'); 
-            document.getElementById('view-cards').classList.add('flex');
+            currentCards = res.data.cards.map(c => ({...c, shadowRewarded: false})); currentIndex = 0;
+            currentArticleText = currentCards.map(c => c.english).join(' '); currentArticleChinese = currentCards.map(c => c.chinese).join('<br><br>');
+            currentArticleTitle = res.data.title || 'Lesson'; document.getElementById('card-main-title').innerText = currentArticleTitle;
+            document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-input').classList.remove('flex');
+            document.getElementById('view-cards').classList.remove('hidden'); document.getElementById('view-cards').classList.add('flex');
             renderCard();
-        }).catch(err => {
-            // 🛡️ 加上防呆：如果後端或 AI 發生錯誤，把載入文字藏起來並報錯
-            document.getElementById('loading-msg').classList.add('hidden');
-            console.error(err);
-        });
+        }).catch(err => { document.getElementById('loading-msg').classList.add('hidden'); console.error(err); });
     }
 
     function renderCard() {
-        const c = currentCards[currentIndex];
-        document.getElementById('card-eng').innerText = c.english; document.getElementById('card-chn').innerText = c.chinese; document.getElementById('counter').innerText = `${currentIndex+1}/${currentCards.length}`;
+        const c = currentCards[currentIndex]; document.getElementById('card-eng').innerText = c.english; document.getElementById('card-chn').innerText = c.chinese; document.getElementById('counter').innerText = `${currentIndex+1}/${currentCards.length}`;
         const vList = document.getElementById('vocab-list');
-        if(c.vocabulary && c.vocabulary.length){
-            document.getElementById('vocab-area').classList.remove('hidden');
-            vList.innerHTML = c.vocabulary.map(v => `<button onclick="event.stopPropagation();saveWord('${v.word}','${v.ipa}','${v.def}', '${escape(c.english)}', '${escape(c.chinese)}', this)" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-full shadow-sm">+ ${v.word}</button>`).join('');
-        } else { document.getElementById('vocab-area').classList.add('hidden'); }
+        if(c.vocabulary && c.vocabulary.length){ document.getElementById('vocab-area').classList.remove('hidden'); vList.innerHTML = c.vocabulary.map(v => `<button onclick="event.stopPropagation();saveWord('${v.word}','${v.ipa}','${v.def}', '${escape(c.english)}', '${escape(c.chinese)}', this)" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-full shadow-sm">+ ${v.word}</button>`).join(''); } else { document.getElementById('vocab-area').classList.add('hidden'); }
         document.getElementById('shadowing-feedback').classList.add('hidden'); document.querySelector('.group').classList.remove('flipped');
     }
-    
-    function flipCard(el){ if(isChatRecording && chatRecognition) chatRecognition.stop(); if(isShadowRecording && shadowRecognition) shadowRecognition.stop(); el.classList.toggle('flipped'); }
+    function flipCard(el){ if(isChatRecording && mediaRecorder) mediaRecorder.stop(); if(isShadowRecording && shadowRecognition) shadowRecognition.stop(); el.classList.toggle('flipped'); }
     function nextCard(){ if(currentIndex<currentCards.length-1){currentIndex++; renderCard();} else { showReviewPage(false); } }
     function prevCard(){ if(currentIndex>0){currentIndex--; renderCard();} }
     function speakTarget(e){ e.stopPropagation(); speak(currentCards[currentIndex].english); }
 
-    // 全文閱讀與彈出翻譯
     function showReviewPage(isFromLibrary = false) {
         document.getElementById('view-cards').classList.add('hidden'); document.getElementById('view-cards').classList.remove('flex');
         const view = document.getElementById('view-review'); view.classList.remove('hidden'); view.classList.add('flex');
@@ -979,10 +930,7 @@
         if(isFromLibrary) { saveBtn.innerHTML = "📂 已收藏"; saveBtn.disabled = true; saveBtn.classList.add('text-gray-400'); } 
         else { saveBtn.innerHTML = "💾 儲存"; saveBtn.disabled = false; saveBtn.classList.remove('text-gray-400'); }
         document.getElementById('review-title').innerText = currentArticleTitle;
-        document.getElementById('review-content').innerHTML = currentArticleText.split(/(\s+)/).map(w => {
-            if(w.trim().length === 0) return w; const rawWord = w.replace(/[^\w']/g, ""); 
-            if(!rawWord) return w; return `<span class="clickable-word" onclick="handleWordClick('${rawWord}', this)">${w}</span>`;
-        }).join('');
+        document.getElementById('review-content').innerHTML = currentArticleText.split(/(\s+)/).map(w => { if(w.trim().length === 0) return w; const rawWord = w.replace(/[^\w']/g, ""); if(!rawWord) return w; return `<span class="clickable-word" onclick="handleWordClick('${rawWord}', this)">${w}</span>`; }).join('');
         document.getElementById('review-content-chn').innerHTML = currentArticleChinese || "(暫無翻譯)";
     }
     function saveCurrentArticle() {
@@ -1012,15 +960,12 @@
         try {
             await callApi('saveVocab', { userId: getUserId(), word: currentPopupData.word, ipa: currentPopupData.ipa, def: currentPopupData.def, ctx: currentPopupData.context, ctxChn: currentPopupData.example_chn || "(From Review)" });
             btn.innerText = "✓ 已儲存"; btn.classList.replace('bg-indigo-600','bg-green-500'); btn.disabled=true;
-            
-            // 💰 存生字雙軌獎勵：+20 EXP, +20 Coins
             const res = await callApi('addReward', { userId: getUserId(), exp: 20, coins: 20 });
-            if(res.status === 'success') { updateGardenUI(res.data); showToast('生字儲存！+20 🌞💰'); }
+            if (res.status === 'success') { updateGardenUI(res.data); showToast('生字儲存！+20 🌞💰'); }
         } catch(e) { console.error("儲存失敗", e); }
     }
     document.addEventListener('click', function(e) { const popup = document.getElementById('word-popup'); if (popup.style.display === 'block' && !popup.contains(e.target) && !e.target.classList.contains('clickable-word')) closePopup(); });
 
-    // 文章庫與生字本
     function openLibrary() { document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-input').classList.remove('flex'); document.getElementById('view-library').classList.remove('hidden'); document.getElementById('view-library').classList.add('flex'); loadLibrary(); }
     function openWordBank() { document.getElementById('view-input').classList.add('hidden'); document.getElementById('view-input').classList.remove('flex'); document.getElementById('view-wordbank').classList.remove('hidden'); document.getElementById('view-wordbank').classList.add('flex'); loadWordBank(); }
     
@@ -1041,12 +986,10 @@
              else list.innerHTML = res.data.map(w => `<div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-3"><div class="flex justify-between items-start mb-2"><div class="flex items-center gap-2"><span class="text-xl font-bold text-indigo-700 cursor-pointer hover:text-indigo-900" onclick="speak('${w.word.replace(/'/g, "\\'")}')">🔊 ${w.word}</span><span class="text-sm font-mono text-gray-500 bg-white px-1 rounded border border-gray-200">${w.ipa}</span></div><button onclick="delWord('${w.id}',this)" class="text-gray-300 hover:text-red-500 p-1">🗑️</button></div><p class="text-gray-700 font-chn mb-3 font-bold border-b border-gray-200 pb-2">${w.def}</p><div class="bg-white p-3 rounded-lg border border-gray-100 text-sm"><p class="text-gray-800 font-eng mb-1 cursor-pointer hover:text-indigo-600 transition" onclick="speak('${w.context.replace(/'/g, "&#39;")}')">🔊 ${w.context}</p><p class="text-gray-500 font-chn text-xs mt-1">${w.contextChn || "..."}</p></div></div>`).join('');
         });
     }
-    
     async function saveWord(w, i, d, ctxEscaped, ctxChnEscaped, btn) {
         btn.innerText="✓"; btn.disabled=true; 
         try {
             await callApi('saveVocab', { userId: getUserId(), word: w, ipa: i, def: d, ctx: unescape(ctxEscaped), ctxChn: unescape(ctxChnEscaped) });
-            // 💰 存生字雙軌獎勵：+20 EXP, +20 Coins
             const res = await callApi('addReward', { userId: getUserId(), exp: 20, coins: 20 });
             if (res.status === 'success') { updateGardenUI(res.data); showToast('生字儲存！+20 🌞💰'); }
         } catch(e) { console.error("儲存失敗", e); }
